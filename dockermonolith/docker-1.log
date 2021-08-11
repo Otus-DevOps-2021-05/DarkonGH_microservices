@@ -1,7 +1,0 @@
-darkon@darkonVM:~ $ sudo docker images
-REPOSITORY                     TAG       IMAGE ID       CREATED              SIZE
-denis_petrov/ubuntu-tmp-file   latest    a46f338a8d59   About a minute ago   63.1MB
-darkon/ubuntu-tmp-file         latest    e5687d68e9ca   30 minutes ago       63.1MB
-ubuntu                         18.04     39a8cfeef173   2 weeks ago          63.1MB
-nginx                          latest    08b152afcfae   2 weeks ago          133MB
-hello-world                    latest    d1165f221234   5 months ago         13.3kB
