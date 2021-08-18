@@ -17,8 +17,7 @@ sudo snap install docker
 ### Запуск первого докер контейнера Hello-World
 
 ```
-darkon@darkonVM:~/DarkonGH_microservices (docker-2)$ sudo docker run hello-world
-[sudo] пароль для darkon:
+darkon@darkonVM:~/DarkonGH_microservices (docker-2)$ docker run hello-world
 Unable to find image 'hello-world:latest' locally
 latest: Pulling from library/hello-world
 b8dfde127a29: Pull complete
@@ -108,14 +107,14 @@ docker commit <u_container_id> yourname/ubuntu-tmp-file
 создание image
 
 ```bash
-darkon@darkonVM:~ $ sudo docker commit 4babfbfd5179 denis_petrov/ubuntu-tmp-file
+darkon@darkonVM:~ $ docker commit 4babfbfd5179 denis_petrov/ubuntu-tmp-file
 sha256:a46f338a8d593c3c1a3f6d94a93e6a3f119e17965f6f02ebc61a5dd041ef4de5
 ```
 
 выведем список образов
 
 ```bash
-darkon@darkonVM:~ $ sudo docker images
+darkon@darkonVM:~ $ docker images
 REPOSITORY                     TAG       IMAGE ID       CREATED              SIZE
 denis_petrov/ubuntu-tmp-file   latest    a46f338a8d59   About a minute ago   63.1MB
 darkon/ubuntu-tmp-file         latest    e5687d68e9ca   30 minutes ago       63.1MB
@@ -131,7 +130,7 @@ hello-world                    latest    d1165f221234   5 months ago         13.
 
 исследование контейнера:
 ```
-darkon@darkonVM:~/DarkonGH_microservices (docker-2)$ sudo docker inspect 4babfbfd5179
+darkon@darkonVM:~/DarkonGH_microservices (docker-2)$ docker inspect 4babfbfd5179
 [
     {
         "Id": "4babfbfd51791d8b8506a03bc386c128a208a90488ba203ff94a57d8dfa1afe4",
@@ -333,8 +332,7 @@ darkon@darkonVM:~/DarkonGH_microservices (docker-2)$ sudo docker inspect 4babfbf
 Исследование образа:
 
 ```
-darkon@darkonVM:~/DarkonGH_microservices (docker-2)$ sudo docker inspect a46f338a8d59
-[sudo] пароль для darkon:
+darkon@darkonVM:~/DarkonGH_microservices (docker-2)$ docker inspect a46f338a8d59
 [
     {
         "Id": "sha256:a46f338a8d593c3c1a3f6d94a93e6a3f119e17965f6f02ebc61a5dd041ef4de5",
@@ -426,3 +424,61 @@ darkon@darkonVM:~/DarkonGH_microservices (docker-2)$ sudo docker inspect a46f338
 2. Контейнер содержит верхний слой доступный для записи. Образ содержит слои только для чтения.
 
 На основе контейнера можно создать образ, в который сохранится текущее состояние контейнера. Таким образом создастся еще слой контейнера поверх исходного образа, тоже неизменный.
+
+
+### Docker rm & rmi
+
+```bash
+docker rm $(docker ps -a -q) # удалит все незапущенные контейнеры
+
+docker rmi $(docker images -q) # удалит все образы
+```
+
+### Docker machine
+
+Создание машины:
+```
+docker-machine create <имя>
+```
+
+После создания хоста и установки на нем Docker engine, работать с удаленным Docker'ом можно с помощью команды:
+
+```bash
+eval $(docker-machine env <имя>)
+```
+
+Эта же команда переключается между разными машинами.
+
+Переключение на локальный докер:
+```bash
+eval $(docker-machine env --unset)
+```
+
+Удаление:
+```bash
+docker-machine rm <имя>
+```
+
+Все докер команды, которые запускаются в той же консоли после *eval $(docker-machine env <имя>)*
+работают с удаленным докер демоном на удаленном хосте.
+
+
+
+### Сборка образа
+
+```bash
+docker build -t reddit:latest .
+
+Sending build context to Docker daemon  7.168kB
+Step 1/11 : FROM ubuntu:18.04
+18.04: Pulling from library/ubuntu
+...
+Successfully built cf13a1774b12
+Successfully tagged reddit:latest
+```
+
+запуск контейнера
+
+``` bash
+docker run --name reddit -d --network=host reddit:latest
+```
