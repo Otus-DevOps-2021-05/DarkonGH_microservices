@@ -482,3 +482,45 @@ Successfully tagged reddit:latest
 ``` bash
 docker run --name reddit -d --network=host reddit:latest
 ```
+
+### Работа с Docker HUB
+
+Загрузка образа в Docker HUB
+
+```bash
+$ docker push darkonone/otus-reddit:1.0
+The push refers to repository [docker.io/darkonone/otus-reddit]
+e4e048ed563c: Pushed
+ca46dc0c7cc6: Pushed
+a1e25ca5487f: Pushed
+55824a4df2ed: Pushed
+5014ab8f2ab2: Pushed
+2f7fcadaa4f7: Pushed
+7564b35fe995: Pushed
+21639b09744f: Mounted from library/ubuntu
+1.0: digest: sha256:a35f39922e33bf594c43b7ab5732012fc4bfe730259a0db81122a776616ab5ad size: 1991
+```
+
+Локальный запуск Docker образа из репозитория Docker HUB
+
+```bash
+docker run --name reddit -d -p 9292:9292 darkonone/otus-reddit:1.0
+Unable to find image 'darkonone/otus-reddit:1.0' locally
+1.0: Pulling from darkonone/otus-reddit
+feac53061382: Pull complete
+e614e9592234: Pull complete
+43740465f8e3: Pull complete
+d6a26cbe8d16: Pull complete
+fc3432e6193e: Pull complete
+ecba7f6a0969: Pull complete
+58926aaea70a: Pull complete
+2148dec6cd50: Pull complete
+Digest: sha256:a35f39922e33bf594c43b7ab5732012fc4bfe730259a0db81122a776616ab5ad
+Status: Downloaded newer image for darkonone/otus-reddit:1.0
+a59244d4da5bcd39ced8093f72958cf5add03e809e035a6f656344a7097c59c1
+
+darkon@darkonVM:~/DarkonGH_microservices/docker-monolith (docker-2)$ docker ps
+CONTAINER ID   IMAGE                       COMMAND       CREATED          STATUS          PORTS                                       NAMES
+a59244d4da5b   darkonone/otus-reddit:1.0   "/start.sh"   27 minutes ago   Up 27 minutes   0.0.0.0:9292->9292/tcp, :::9292->9292/tcp   reddit
+darkon@darkonVM:~/DarkonGH_microservices/docker-monolith (docker-2)$
+```
