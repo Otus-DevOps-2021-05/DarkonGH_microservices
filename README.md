@@ -2,8 +2,9 @@
 
 DarkonGH microservices repository
 
-## Домашнее задание №15 Docker контейнеры. Docker под капотом
+## Домашнее задание №15-№16 Docker контейнеры. Docker под капотом
 
+*12 ДЗ: Установка Docker, запуск контейнера на локальной машине, выполнение команд внутри контейнера, создание образа контейнера на основе запущенного.*
 *13 ДЗ: Запуск VM с установленным Docker Engine при помощи Docker Machine. Написание Dockerfile и сборка образа с тестовым приложением. Сохранение образа на DockerHub.*
 
 ### Установка Docker
@@ -524,3 +525,109 @@ CONTAINER ID   IMAGE                       COMMAND       CREATED          STATUS
 a59244d4da5b   darkonone/otus-reddit:1.0   "/start.sh"   27 minutes ago   Up 27 minutes   0.0.0.0:9292->9292/tcp, :::9292->9292/tcp   reddit
 darkon@darkonVM:~/DarkonGH_microservices/docker-monolith (docker-2)$
 ```
+
+## Домашнее задание №17
+
+*14 ДЗ: Разбиение приложения на несколько микросервисов. Выбор базового образа. Подключение volume к контейнеру.*
+
+```
+docker build -t darkonone/post:1.0 ./post-py
+docker build -t darkonone/comment:1.0 ./comment/
+docker build -t darkonone/ui:1.0 ./ui/
+```
+
+Создание bridge-сети reddit.
+Запуск докер контейнеров с микросервисами и mongodb. Добавление сетевых алиасов контейнерам.
+
+```shell
+docker network create reddit
+
+docker run -d --network=reddit --network-alias=post_db --network-alias=comment_db mongo:latest
+
+docker run -d --network=reddit --network-alias=post darkonone/post:1.0
+
+docker run -d --network=reddit --network-alias=comment darkonone/comment:1.0
+
+docker run -d --network=reddit -p 9292:9292 darkonone/ui:1.0
+```
+
+Проверка `http://62.84.118.223:9292/`
+
+## Задание со *
+
+Для взаимодействия через другие сетевые алиасы, перекроем запеченые переменные окружения в образе, через явное указание переменных в строке запуска контейнера:
+
+```shell
+docker run -d --network=reddit --network-alias=post_db_new --network-alias=comment_db_new mongo:latest
+docker run -d --network=reddit --network-alias=post_new -e POST_DATABASE_HOST='post_db_new' darkonone/post:1.0
+docker run -d --network=reddit --network-alias=comment_new -e COMMENT_DATABASE_HOST='comment_db_new' darkonone/comment:1.0
+docker run -d --network=reddit -e POST_SERVICE_HOST='post_new' -e COMMENT_SERVICE_HOST='comment_new' -p 9292:9292 darkonone/ui:1.0
+```
+Сервис работает.
+
+
+Образы:
+```shell
+docker images
+REPOSITORY          TAG             IMAGE ID       CREATED             SIZE
+darkonone/comment   1.0             9a1084ce356c   22 minutes ago      769MB
+darkonone/post      1.0             b3729dc31fdf   23 minutes ago      62.1MB
+darkonone/ui        1.0             4a34cae972c9   About an hour ago   771MB
+mongo               latest          ccf4b4ee3bee   3 days ago          685MB
+python              3.6.14-alpine   a3c0c6f5214d   3 weeks ago         40.8MB
+ruby                2.2             6c8e6f9667b2   3 years ago         715MB
+```
+
+Сборка нового образа ui на основе образа ubuntu 16.04
+
+```shell
+docker build -t darkonone/ui:2.0 ./ui/
+
+$ docker images
+REPOSITORY          TAG             IMAGE ID       CREATED             SIZE
+darkonone/ui        2.0             8b290d498ad6   33 seconds ago      462MB
+darkonone/comment   1.0             9a1084ce356c   30 minutes ago      769MB
+darkonone/post      1.0             b3729dc31fdf   30 minutes ago      62.1MB
+darkonone/ui        1.0             4a34cae972c9   About an hour ago   771MB
+mongo               latest          ccf4b4ee3bee   3 days ago          685MB
+ubuntu              16.04           b6f507652425   3 weeks ago         135MB
+python              3.6.14-alpine   a3c0c6f5214d   3 weeks ago         40.8MB
+ruby                2.2             6c8e6f9667b2   3 years ago         715MB
+```
+
+### Задание со * уменьшение размера образа
+
+Используем образы Alpine Linux для уменьшения размера.
+Результат уменьшения размера образов:
+```
+$ docker images
+REPOSITORY          TAG             IMAGE ID       CREATED              SIZE
+darkonone/ui        3.0             4272d58ca915   About a minute ago   135MB
+darkonone/comment   2.0             f344e643ecb8   2 minutes ago        132MB
+darkonone/ui        2.0             8b290d498ad6   35 minutes ago       462MB
+darkonone/comment   1.0             9a1084ce356c   About an hour ago    769MB
+darkonone/post      1.0             b3729dc31fdf   About an hour ago    62.1MB
+darkonone/ui        1.0             4a34cae972c9   2 hours ago          771MB
+mongo               latest          ccf4b4ee3bee   3 days ago           685MB
+ubuntu              16.04           b6f507652425   3 weeks ago          135MB
+python              3.6.14-alpine   a3c0c6f5214d   3 weeks ago          40.8MB
+ruby                2.3-alpine      a8309e0a481a   2 years ago          96.3MB
+ruby                2.2             6c8e6f9667b2   3 years ago          715MB
+```
+
+###  Создание Volume
+
+```
+docker volume create reddit_db
+```
+```
+docker run -d --network=reddit --network-alias=post_db --network-alias=comment_db -v reddit_db:/data/db mongo:latest
+docker run -d --network=reddit --network-alias=post darkonone/post:1.0
+docker run -d --network=reddit --network-alias=comment darkonone/comment:2.0
+docker run -d --network=reddit -p 9292:9292 darkonone/ui:3.0
+```
+
+Проверка `http://62.84.118.223:9292/`
+Удаление контейнеров *docker kill $(docker ps -q)*
+
+Запуск контейнеров повторно. После запуска сохранился написанный в предыдущий раз пост.
