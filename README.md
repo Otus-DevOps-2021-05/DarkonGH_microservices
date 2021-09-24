@@ -526,7 +526,9 @@ a59244d4da5b   darkonone/otus-reddit:1.0   "/start.sh"   27 minutes ago   Up 27 
 darkon@darkonVM:~/DarkonGH_microservices/docker-monolith (docker-2)$
 ```
 
-## Домашнее задание №17
+## Домашнее задание №17 Docker образы. Микросервисы
+
+### Разделение приложения на микросервисы и создание докер образов
 
 *14 ДЗ: Разбиение приложения на несколько микросервисов. Выбор базового образа. Подключение volume к контейнеру.*
 
@@ -553,7 +555,7 @@ docker run -d --network=reddit -p 9292:9292 darkonone/ui:1.0
 
 Проверка `http://62.84.118.223:9292/`
 
-## Задание со *
+## Задание со * - изменение сетевых алиасов
 
 Для взаимодействия через другие сетевые алиасы, перекроем запеченые переменные окружения в образе, через явное указание переменных в строке запуска контейнера:
 
@@ -599,7 +601,8 @@ ruby                2.2             6c8e6f9667b2   3 years ago         715MB
 
 Используем образы Alpine Linux для уменьшения размера.
 Результат уменьшения размера образов:
-```
+
+```shell
 $ docker images
 REPOSITORY          TAG             IMAGE ID       CREATED              SIZE
 darkonone/ui        3.0             4272d58ca915   About a minute ago   135MB
@@ -617,10 +620,11 @@ ruby                2.2             6c8e6f9667b2   3 years ago          715MB
 
 ###  Создание Volume
 
-```
+```shell
 docker volume create reddit_db
 ```
-```
+
+```shell
 docker run -d --network=reddit --network-alias=post_db --network-alias=comment_db -v reddit_db:/data/db mongo:latest
 docker run -d --network=reddit --network-alias=post darkonone/post:1.0
 docker run -d --network=reddit --network-alias=comment darkonone/comment:2.0
@@ -630,4 +634,4 @@ docker run -d --network=reddit -p 9292:9292 darkonone/ui:3.0
 Проверка `http://62.84.118.223:9292/`
 Удаление контейнеров *docker kill $(docker ps -q)*
 
-Запуск контейнеров повторно. После запуска сохранился написанный в предыдущий раз пост.
+Запуск контейнеров повторно. После запуска контейнера из образа, сохранился написанный в предыдущий раз пост в приложении.
