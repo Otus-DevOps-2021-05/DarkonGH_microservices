@@ -1,2 +1,5 @@
 cr_docker-host.sh
 cr_docker-machine.sh
+
+.vscode/
+.env
