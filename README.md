@@ -697,3 +697,10 @@ src_ui_1        puma                          Up      0.0.0.0:9292->9292/tcp,:::
 ```
 docker-compose -f docker-compose.override.yml up -d
 ```
+
+Запуск проекта в обычном режиме
+```
+docker-compose -f docker-compose.yml up -d
+```
+
+Если в каталоге проекта присутствует файл docker-compose.**override**.yml, то при выполнении команды `docker-compose up -d` используется он, а не основной файл docker-compose.yml.
