@@ -703,4 +703,4 @@ docker-compose -f docker-compose.override.yml up -d
 docker-compose -f docker-compose.yml up -d
 ```
 
-Если в каталоге проекта присутствует файл docker-compose.**override**.yml, то при выполнении команды `docker-compose up -d` используется он, а не основной файл docker-compose.yml.
+Если в каталоге проекта присутствует файл docker-compose.**override**.yml, то при выполнении команды `docker-compose up -d` он объединяется с конфигурацией описанной в docker-compose.yml. Детальное описание в документации `https://docs.docker.com/compose/extends/`

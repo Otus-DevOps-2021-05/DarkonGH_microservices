@@ -1,54 +1,29 @@
 ---
 version: '3.3'
 services:
-  post_db:
-    image: mongo:${MONGO_VERSION}
-    volumes:
-      - post_db:/data/db
-    networks:
-      - back_net
   ui:
-    build: ./ui
-    image: ${USERNAME}/ui:${UI_TAG}
     ports:
       - ${UI_IP}:9292/tcp
     volumes:
-      - ./ui:/app
+      - ui:/app
     networks:
       - front_net
     command: ["puma", "--debug", "-w", "2"]
   post:
-    build: ./post-py
-    image: ${USERNAME}/post:${POST_TAG}
     volumes:
-      - ./post-py:/app
+      - post-py:/app
     networks:
       - back_net
       - front_net
   comment:
-    build: ./comment
-    image: ${USERNAME}/comment:${COMMENT_TAG}
     volumes:
-      - ./comment:/app
+      - comment:/app
     networks:
       - back_net
       - front_net
     command: ["puma", "--debug", "-w", "2"]
 
 volumes:
-  post_db:
-
-
-networks:
-  front_net:
-    driver: ${NET_DRIVER}
-    ipam:
-      driver: default
-      config:
-        - subnet: ${FRONT_NET_SUBNET}
-  back_net:
-    driver: ${NET_DRIVER}
-    ipam:
-      driver: default
-      config:
-        - subnet: ${BACK_NET_SUBNET}
+  ui:
+  comment:
+  post-py:
