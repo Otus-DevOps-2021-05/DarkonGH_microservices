@@ -555,7 +555,7 @@ docker run -d --network=reddit -p 9292:9292 darkonone/ui:1.0
 
 Проверка `http://62.84.118.223:9292/`
 
-## Задание со * - изменение сетевых алиасов
+### Задание со * - изменение сетевых алиасов
 
 Для взаимодействия через другие сетевые алиасы, перекроем запеченые переменные окружения в образе, через явное указание переменных в строке запуска контейнера:
 
@@ -635,3 +635,72 @@ docker run -d --network=reddit -p 9292:9292 darkonone/ui:3.0
 Удаление контейнеров *docker kill $(docker ps -q)*
 
 Запуск контейнеров повторно. После запуска контейнера из образа, сохранился написанный в предыдущий раз пост в приложении.
+
+
+## Домашнее задание №18 Сетевое взаимодействие Docker контейнеров. Docker Compose. Тестирование образов
+
+*15 ДЗ: Практика работы с основными типами Docker сетей. Декларативное описание Docker инфраструктуры при помощи Docker Compose.*
+
+### Docker-Compose
+
+Создадим docker-compose.yml файл проекта.
+Запуск проекта
+
+```
+ docker-compose up -d
+Creating network "src_reddit" with the default driver
+Creating volume "src_post_db" with default driver
+Pulling post_db (mongo:3.2)...
+3.2: Pulling from library/mongo
+a92a4af0fb9c: Pull complete
+74a2c7f3849e: Pull complete
+927b52ab29bb: Pull complete
+e941def14025: Pull complete
+be6fce289e32: Pull complete
+f6d82baac946: Pull complete
+7c1a640b9ded: Pull complete
+e8b2fc34c941: Pull complete
+1fd822faa46a: Pull complete
+61ba5f01559c: Pull complete
+db344da27f9a: Pull complete
+Digest: sha256:0463a91d8eff189747348c154507afc7aba045baa40e8d58d8a4c798e71001f3
+Status: Downloaded newer image for mongo:3.2
+Creating src_ui_1      ... done
+Creating src_post_1    ... done
+Creating src_comment_1 ... done
+Creating src_post_db_1 ... done
+```
+
+ Просмотр запущенных контейнеров:
+```
+docker-compose ps
+    Name                  Command             State                    Ports
+----------------------------------------------------------------------------------------------
+src_comment_1   puma                          Up
+src_post_1      python3 post_app.py           Up
+src_post_db_1   docker-entrypoint.sh mongod   Up      27017/tcp
+src_ui_1        puma                          Up      0.0.0.0:9292->9292/tcp,:::9292->9292/tcp
+```
+
+Проверка работоспособности `http://62.84.118.223:9292/`
+Все ОК!
+
+### Параметризация сетей в Docker-Compose
+
+Для параметризации docker-compose.yml на лету используем файл `.env`  с переменными.
+
+Для параметризации имени проекта используется встроенная переменная `COMPOSE_PROJECT_NAME`, которую необходимо задать в `.env`  файле, иначе используется название каталога проекта.
+
+### Задание со *
+
+Запуск проекта в дебаг режиме для разработчиков с произвольными точками монтирования приложения в HOST систему:
+```
+docker-compose -f docker-compose.override.yml up -d
+```
+
+Запуск проекта в обычном режиме
+```
+docker-compose -f docker-compose.yml up -d
+```
+
+Если в каталоге проекта присутствует файл docker-compose.**override**.yml, то при выполнении команды `docker-compose up -d` он объединяется с конфигурацией описанной в docker-compose.yml. Детальное описание в документации `https://docs.docker.com/compose/extends/`

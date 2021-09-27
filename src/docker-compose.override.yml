@@ -1,0 +1,24 @@
+---
+version: '3.3'
+services:
+  ui:
+    ports:
+      - ${UI_IP}:9292/tcp
+    volumes:
+      - ./ui:/app
+    networks:
+      - front_net
+    command: ["puma", "--debug", "-w", "2"]
+  post:
+    volumes:
+      - ./post-py:/app
+    networks:
+      - back_net
+      - front_net
+  comment:
+    volumes:
+      - ./comment:/app
+    networks:
+      - back_net
+      - front_net
+    command: ["puma", "--debug", "-w", "2"]
