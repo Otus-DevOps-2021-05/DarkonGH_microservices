@@ -19,6 +19,21 @@ build_job:
   script:
     - echo 'Building'
 
+build_container_image:
+  stage: build
+  image: 'docker:latest'
+  before_script:
+    - cd reddit
+  script:
+    - docker build . -t reddit_app:$CI_COMMIT_REF_NAME
+  environment:
+    name: branch/$CI_COMMIT_REF_NAME
+    url: http://$CI_ENVIRONMENT_SLUG.example.com
+  only:
+    - branches
+  except:
+    - master
+
 test_unit_job:
   stage: test
   services:
@@ -65,6 +80,8 @@ stage:
 production:
   stage: production
   when: manual
+  only:
+    - /^\d+\.\d+\.\d+/
   script:
    - echo 'Deploy'
   environment:
