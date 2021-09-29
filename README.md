@@ -704,3 +704,73 @@ docker-compose -f docker-compose.yml up -d
 ```
 
 Если в каталоге проекта присутствует файл docker-compose.**override**.yml, то при выполнении команды `docker-compose up -d` он объединяется с конфигурацией описанной в docker-compose.yml. Детальное описание в документации `https://docs.docker.com/compose/extends/`
+
+## Домашнее задание №20 Устройство Gitlab CI. Построение процесса непрерывной интеграции
+
+*16 ДЗ: Gitlab CI. Построение процесса непрерывной интеграции*
+
+### Установка
+
+Подготовим VM в облаке Yandex - используем *yc*.
+
+```shell
+yc compute instance create \
+  --name gitlab-ci-vm \
+  --zone ru-central1-a \
+  --network-interface subnet-name=default-ru-central1-a,nat-ip-version=ipv4 \
+  --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-1804-lts,size=50 \
+  --ssh-key ~/.ssh/id_rsa.pub \
+  --cores 2 \
+  --core-fraction 100 \
+  --memory 8G
+```
+
+Установим на нее Docker-machine.
+
+```shell
+docker-machine -D create \
+--driver generic \
+--generic-ip-address=62.84.117.213 \
+--generic-ssh-user yc-user \
+--generic-ssh-key ~/.ssh/id_rsa \
+docker-gitlab-ci-vm
+```
+
+Подключимся к удаленному Docker-machine:
+
+```shell
+eval $(docker-machine env docker-gitlab-ci-vm)
+```
+
+
+### Задание со * -  Запуск reddit в контейнере
+
+docker exec -it gitlab-runner gitlab-runner register --url http://10.128.0.34/ --registration-token fpfrr4rTx8VsNBW8QEQF --non-interactive --locked=false --name DockerRunner --executor docker --docker-image alpine:latest --docker-volumes "/var/run/docker.sock:/var/run/docker.sock" --tag-list "linux,xenial,ubuntu,docker" --run-untagged
+
+
+root@docker-gitlab-ci-vm:/# docker images
+REPOSITORY                                                          TAG               IMAGE ID       CREATED          SIZE
+reddit_app                                                          gitlab-ci-1       d63b0b342423   29 minutes ago   653MB
+
+
+ docker run -id -p 9292:9292 reddit_app:gitlab-ci-1
+
+ ```
+docker logs ab51a3455d19448172b12ade4030a2f2e3c483667e74929ee9415c404d5502d0
+about to fork child process, waiting until server is ready for connections.
+forked process: 9
+child process started successfully, parent exiting
+Puma starting in single mode...
+* Puma version: 5.5.0 (ruby 2.5.1-p57) ("Zawgyi")
+*  Min threads: 0
+*  Max threads: 5
+*  Environment: development
+*          PID: 32
+/reddit/helpers.rb:4: warning: redefining `object_id' may cause serious problems
+* Listening on http://0.0.0.0:9292
+Use Ctrl-C to stop
+
+ ```
+
+
+### Настройка оповещений в Slack
