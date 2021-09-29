@@ -9,11 +9,10 @@ stages:
 
 variables:
   DATABASE_URL: 'mongodb://mongo/user_posts'
-#  DOCKER_HOST: tcp://10.128.0.34:2375
 
-before_script:
-  - cd reddit
-  - bundle install
+# before_script:
+#   - cd reddit
+#   - bundle install
 
 build_job:
   stage: build
@@ -22,7 +21,7 @@ build_job:
 
 build_container_image:
   stage: build
-  image: docker:stable
+#  image: docker:stable
   before_script:
     - cd reddit
   script:
