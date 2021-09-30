@@ -17,9 +17,7 @@ build_job:
 
 build_container_image:
   stage: build
-  #image: docker:stable
-  services:
-    - docker:stable
+  image: docker:stable
   script:
     - cd reddit
     - docker build . -t reddit_app:$CI_COMMIT_REF_NAME
