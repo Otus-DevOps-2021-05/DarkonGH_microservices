@@ -774,3 +774,11 @@ Use Ctrl-C to stop
 
 
 ### Настройка оповещений в Slack
+
+Для настройки необходимо сгенерировать url для webhook в Slack
+https://docs.gitlab.com/ee/user/project/integrations/slack.html
+
+НА https://devops-team-otus.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks выбираем интересующий канал и генерим url
+
+
+https://hooks.slack.com/services/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
