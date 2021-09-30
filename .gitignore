@@ -1,5 +1,11 @@
 cr_docker-host.sh
 cr_docker-machine.sh
+cr_gitlab-ci-vm.sh
+cr_dm_gilab-ci.sh
 
 .vscode/
 .env
+
+key_tf.json
+terraform.tfvars
+version.tf
