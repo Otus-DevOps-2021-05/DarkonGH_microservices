@@ -17,10 +17,11 @@ build_job:
 
 build_container_image:
   stage: build
-  image: docker:stable
-  before_script:
-    - cd reddit
+  #image: docker:stable
+  services:
+    - docker:stable
   script:
+    - cd reddit
     - docker build . -t reddit_app:$CI_COMMIT_REF_NAME
   environment:
     name: branch/$CI_COMMIT_REF_NAME
