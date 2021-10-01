@@ -705,9 +705,7 @@ docker-compose -f docker-compose.yml up -d
 
 *16 ДЗ: Gitlab CI. Построение процесса непрерывной интеграции*
 
-### Установка
-
-##  Установка VM при помощи yandex cli и установка Docker-Machine
+###  Установка VM при помощи yandex cli и установка Docker-Machine
 
 Подготовим VM в облаке Yandex - используем *yc*.
 
@@ -794,7 +792,6 @@ $ docker build . -t reddit_app:$CI_COMMIT_REF_NAME
 error during connect: Post http://docker:2375/v1.40/build?buildargs=%7B%7D&cachefrom=%5B%5D&cgroupparent=&cpuperiod=0&cpuquota=0&cpusetcpus=&cpusetmems=&cpushares=0&dockerfile=Dockerfile&labels=%7B%7D&memory=0&memswap=0&networkmode=default&rm=1&session=oz9gqpn35d8uaugmyvcd5mb49&shmsize=0&t=reddit_app%3Agitlab-ci-1&target=&ulimits=null&version=1: dial tcp: lookup docker on 10.128.0.12:53: no such host
 ERROR: Job failed: exit code 1
 ```
-
 
 ### Задание со * -  Запуск reddit в контейнере
 
