@@ -59,7 +59,7 @@ branch review:
     - echo "Deploy to $CI_ENVIRONMENT_SLUG"
     - cd reddit
     - docker-compose down
-    - docker-compose -d up
+    - docker-compose up -d
   environment:
     name: branch/$CI_COMMIT_REF_NAME
     url: http://62.84.116.138:9292
