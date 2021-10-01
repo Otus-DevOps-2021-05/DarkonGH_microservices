@@ -3,4 +3,4 @@ services:
   reddit_app:
     image: reddit_app:gitlab-ci-1
   ports:
-      - 9292:9292/tcp
+    - 9292:9292/tcp
