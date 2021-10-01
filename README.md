@@ -740,7 +740,7 @@ docker-gitlab-ci-vm
 eval $(docker-machine env docker-gitlab-ci-vm)
 ```
 
-### Автоматизация развёртывания GitLab
+### Автоматизация развёртывания GitLab и Gitlab-runner
 
 Для автоматизации развертывания GitLab подготовим конфигурационные файлы Packer и Terraform, а также напишем плейбуки Ansible.
 Как и ранее будем генерить динамическое инвентори на основе вывода команды terraform state pull.
@@ -846,6 +846,15 @@ Use Ctrl-C to stop
 0.0.0.0 - - [01/Oct/2021:23:19:32 +0000] "GET / HTTP/1.1" 200 1861 0.0192
  ```
 
+### Автоматизация развёртывания GitLab Runner
+
+Плейбук развертывания GitLab Runner
+
+```
+/DarkonGH_microservices/gitlab-ci/docker_gitlab.yml
+```
+
+
 ### Настройка оповещений в Slack
 
 Для настройки необходимо сгенерировать url для webhook в Slack, описание настройки:
@@ -853,5 +862,4 @@ https://docs.gitlab.com/ee/user/project/integrations/slack.html
 
 На страничке https://devops-team-otus.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks выбираем интересующий канал и генерим url
 
-Добавляем его в
-https://hooks.slack.com/services/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
+Добавляем ссылку `https://hooks.slack.com/services/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` в Setting\Integration Settings\Slack notifications\Webhook

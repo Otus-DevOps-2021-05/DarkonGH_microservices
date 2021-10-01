@@ -1,0 +1,14 @@
+{
+    "dockerhost": {
+        "hosts": [
+            "docker-host-0"
+        ]
+    },
+    "_meta": {
+        "hostvars": {
+            "docker-host-0": {
+                "ansible_host": "62.84.116.138"
+            }
+        }
+    }
+}
