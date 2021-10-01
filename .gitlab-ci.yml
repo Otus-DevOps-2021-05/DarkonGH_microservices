@@ -54,7 +54,7 @@ deploy_dev_job:
 
 branch review:
   stage: review
-  image: docker:stable
+  image: tmaier/docker-compose
   script:
     - echo "Deploy to $CI_ENVIRONMENT_SLUG"
     - cd reddit
