@@ -798,7 +798,7 @@ ERROR: Job failed: exit code 1
 
 ### Задание со * -  Запуск reddit в контейнере
 
-Для деплоя приложения в пайплайне доработаем джобу branch review
+Для деплоя приложения в пайплайне доработаем джобу branch review и напишем docker-compose.yml для управления нашим приложением.
 
 ```
 branch review:
@@ -808,7 +808,7 @@ branch review:
     - echo "Deploy to $CI_ENVIRONMENT_SLUG"
     - cd reddit
     - docker-compose down
-    - docker-compose -d up
+    - docker-compose up -d
   environment:
     name: branch/$CI_COMMIT_REF_NAME
     url: http://62.84.116.138:9292
@@ -819,15 +819,17 @@ branch review:
 ```
 
 
-root@docker-gitlab-ci-vm:/# docker images
-REPOSITORY                                                          TAG               IMAGE ID       CREATED          SIZE
-reddit_app                                                          gitlab-ci-1       d63b0b342423   29 minutes ago   653MB
-
-
- docker run -id -p 9292:9292 reddit_app:gitlab-ci-1
+Список контейнеров:
+```
+ubuntu@fhmejmsfo9uvikc0n52d:~$ docker ps -a
+CONTAINER ID   IMAGE                         COMMAND                  CREATED         STATUS                 PORTS                                                            NAMES
+19d65045b36f   reddit_app:gitlab-ci-1        "/reddit/start.sh"       3 minutes ago   Up 3 minutes           0.0.0.0:9292->9292/tcp, :::9292->9292/tcp                        reddit_reddit_app_1
+a49674bae9b0   gitlab/gitlab-runner:latest   "/usr/bin/dumb-init …"   3 hours ago     Up 3 hours                                                                              gitlab-runner
+4d771ece4417   gitlab/gitlab-ce:latest       "/assets/wrapper"        3 hours ago     Up 3 hours (healthy)   0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp, 0.0.0.0:2222->22/tcp   gitlab
+```
 
  ```
-docker logs ab51a3455d19448172b12ade4030a2f2e3c483667e74929ee9415c404d5502d0
+ubuntu@fhmejmsfo9uvikc0n52d:~$ docker logs 19d65045b36f
 about to fork child process, waiting until server is ready for connections.
 forked process: 9
 child process started successfully, parent exiting
@@ -840,16 +842,16 @@ Puma starting in single mode...
 /reddit/helpers.rb:4: warning: redefining `object_id' may cause serious problems
 * Listening on http://0.0.0.0:9292
 Use Ctrl-C to stop
-
+0.0.0.0 - - [01/Oct/2021:23:18:57 +0000] "GET / HTTP/1.1" 200 1861 0.0285
+0.0.0.0 - - [01/Oct/2021:23:19:32 +0000] "GET / HTTP/1.1" 200 1861 0.0192
  ```
-
 
 ### Настройка оповещений в Slack
 
-Для настройки необходимо сгенерировать url для webhook в Slack
+Для настройки необходимо сгенерировать url для webhook в Slack, описание настройки:
 https://docs.gitlab.com/ee/user/project/integrations/slack.html
 
-НА https://devops-team-otus.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks выбираем интересующий канал и генерим url
+На страничке https://devops-team-otus.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks выбираем интересующий канал и генерим url
 
-
+Добавляем его в
 https://hooks.slack.com/services/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
