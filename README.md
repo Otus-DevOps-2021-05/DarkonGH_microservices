@@ -9,11 +9,7 @@ DarkonGH microservices repository
 
 ### Установка Docker
 
-Выполним установку Docker:
-
-```bash
-sudo snap install docker
-```
+Выполним установку Docker согласно официальной инструкции `https://docs.docker.com/engine/install/ubuntu/`
 
 ### Запуск первого докер контейнера Hello-World
 
@@ -711,6 +707,8 @@ docker-compose -f docker-compose.yml up -d
 
 ### Установка
 
+##  Установка VM при помощи yandex cli и установка Docker-Machine
+
 Подготовим VM в облаке Yandex - используем *yc*.
 
 ```shell
@@ -741,6 +739,62 @@ docker-gitlab-ci-vm
 ```shell
 eval $(docker-machine env docker-gitlab-ci-vm)
 ```
+
+### Автоматизация развёртывания GitLab
+
+Для автоматизации развертывания GitLab подготовим конфигурационные файлы Packer и Terraform, а также напишем плейбуки Ansible.
+Как и ранее будем генерить динамическое инвентори на основе вывода команды terraform state pull.
+
+1. Подготовим образ с предустановленныи Docker и python3, провижионинг осуществим при помощи плейбука playbooks/packer_docker-host.yml
+Запуску команды выполняем из каталога ~/DarkonGH_microservices/docker-monolith/infra
+
+```
+packer build -var-file=packer/variables.json packer/docker.json
+```
+2. Полученный Id образа внесем в файл переменных terraform.tfvars и выполним  terraform apply из каталога ~/DarkonGH_microservices/docker-monolith/infra/terraform.  Output переменная после создания VM docker-host-0 будет использоваться в динамическом инвентори.
+3. Для работы динамического инвентори, в конфигурационный файл *env_tf_state.env* внесем абсолютный путь до каталога с конфигурацией terraform:
+```
+/home/darkon/DarkonGH_microservices/docker-monolith/infra/terraform
+```
+4. Запустим плейбук разворачивания GitLab-ci и  gitlab-runner в контейнерах из каталога /home/darkon/DarkonGH_microservices/docker-monolith/infra/ansible. Команда
+```
+ansible-playbook playbooks/docker_gitlab.yml
+```
+
+5. Подключимся по ssh к VM docker-host-0
+```
+ssh ubuntu@62.84.116.138
+```
+для того чтобы узнать root пароль GitLab-ci в каталоге /srv/gitlab/config просмотрим файл initial_root_password
+
+```
+ubuntu@fhmejmsfo9uvikc0n52d:/srv/gitlab/config$ sudo cat initial_root_password
+# WARNING: This value is valid only in the following conditions
+#          1. If provided manually (either via `GITLAB_ROOT_PASSWORD` environment variable or via `gitlab_rails['initial_root_password']` setting in `gitlab.rb`, it was provided before database was seeded for the first time (usually, the first reconfigure run).
+#          2. Password hasn't been changed manually, either via UI or via command line.
+#
+#          If the password shown here doesn't work, you must reset the admin password following https://docs.gitlab.com/ee/security/reset_user_password.html#reset-your-root-password.
+
+Password: WDYiLCbCtxdHTgu2vzY0Z6HOcKxgs+KdnAF6gmfppSg=
+
+# NOTE: This file will be automatically deleted in the first reconfigure run after 24 hours.
+```
+
+теперь можно открыть UI Gitlab-ci `http://62.84.116.138/` и авторизоваться с приведенным в конфиге паролем для пользователя root.
+После авторизации рекомендуется изменить пароль и отключить авторегистрацию пользователей.
+
+6. Регистрация gitlab-runner
+```
+docker exec -it gitlab-runner gitlab-runner register --url http://10.128.0.12/ --registration-token v1ZfpQ634YgCGLqiE_6L --non-interactive --locked=false --name DockerRunner --executor docker --docker-image alpine:latest --docker-volumes "/var/run/docker.sock:/var/run/docker.sock" --tag-list "linux,xenial,ubuntu,docker" --run-untagged
+```
+Обязательным параметром является проброс сокета к Докеру на Vm для корректного функционирования Docker in Docker. Иначе он не сможет собирать образы в докере и будут ошибки в пайплайне.
+
+```
+$ docker build . -t reddit_app:$CI_COMMIT_REF_NAME
+error during connect: Post http://docker:2375/v1.40/build?buildargs=%7B%7D&cachefrom=%5B%5D&cgroupparent=&cpuperiod=0&cpuquota=0&cpusetcpus=&cpusetmems=&cpushares=0&dockerfile=Dockerfile&labels=%7B%7D&memory=0&memswap=0&networkmode=default&rm=1&session=oz9gqpn35d8uaugmyvcd5mb49&shmsize=0&t=reddit_app%3Agitlab-ci-1&target=&ulimits=null&version=1: dial tcp: lookup docker on 10.128.0.12:53: no such host
+ERROR: Job failed: exit code 1
+```
+
 
 
 ### Задание со * -  Запуск reddit в контейнере
