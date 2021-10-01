@@ -756,7 +756,7 @@ packer build -var-file=packer/variables.json packer/docker.json
 ```
 /home/darkon/DarkonGH_microservices/docker-monolith/infra/terraform
 ```
-4. Запустим плейбук разворачивания GitLab-ci и  gitlab-runner в контейнерах из каталога /home/darkon/DarkonGH_microservices/docker-monolith/infra/ansible. Команда
+4. Запустим плейбук разворачивания GitLab-ci и gitlab-runner в контейнерах из каталога /home/darkon/DarkonGH_microservices/docker-monolith/infra/ansible. Команда
 ```
 ansible-playbook playbooks/docker_gitlab.yml
 ```
@@ -796,10 +796,27 @@ ERROR: Job failed: exit code 1
 ```
 
 
-
 ### Задание со * -  Запуск reddit в контейнере
 
-docker exec -it gitlab-runner gitlab-runner register --url http://10.128.0.34/ --registration-token fpfrr4rTx8VsNBW8QEQF --non-interactive --locked=false --name DockerRunner --executor docker --docker-image alpine:latest --docker-volumes "/var/run/docker.sock:/var/run/docker.sock" --tag-list "linux,xenial,ubuntu,docker" --run-untagged
+Для деплоя приложения в пайплайне доработаем джобу branch review
+
+```
+branch review:
+  stage: review
+  image: tmaier/docker-compose:latest
+  script:
+    - echo "Deploy to $CI_ENVIRONMENT_SLUG"
+    - cd reddit
+    - docker-compose down
+    - docker-compose -d up
+  environment:
+    name: branch/$CI_COMMIT_REF_NAME
+    url: http://62.84.116.138:9292
+  only:
+    - branches
+  except:
+    - master
+```
 
 
 root@docker-gitlab-ci-vm:/# docker images
