@@ -6,6 +6,24 @@ cr_dm_gilab-ci.sh
 .vscode/
 .env
 
+#terraform
 key_tf.json
 terraform.tfvars
 version.tf
+
+*.tfstate
+*.tfstate.*.backup
+*.tfstate.backup
+*.tfvars
+.terraform/
+
+.terraform.lock.hcl
+
+
+#packer
+variables.json
+
+#ansible
+work.log
+roles/
+reddit_app_container.yaml

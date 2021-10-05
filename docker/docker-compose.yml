@@ -1,0 +1,126 @@
+---
+version: '3.3'
+services:
+  post_db:
+    image: mongo:${MONGO_VERSION}
+    volumes:
+      - post_db:/data/db
+    networks:
+      back_net:
+        aliases:
+          - post_db
+          - comment_db
+
+  ui:
+    image: ${USERNAME}/ui:${UI_TAG}
+    ports:
+      - ${UI_IP}:9292/tcp
+    networks:
+      - front_net
+
+  post:
+    image: ${USERNAME}/post:${POST_TAG}
+    networks:
+      back_net:
+        aliases:
+          - post
+      front_net:
+        aliases:
+          - post
+
+  comment:
+    image: ${USERNAME}/comment:${COMMENT_TAG}
+    networks:
+      back_net:
+        aliases:
+          - comment
+      front_net:
+        aliases:
+          - comment
+
+  prometheus:
+    image: ${USERNAME}/prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - prometheus_data:/prometheus
+    command: # Передаем доп параметры в командной строке
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention=1d' # Задаем время хранения метрик в 1 день
+    networks:
+      - back_net
+      - front_net
+      - host
+
+  node-exporter:
+    image: prom/node-exporter:v0.15.2
+    user: root
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
+    networks:
+      - host
+
+  bitnami-mongodb-exporter:
+    image: bitnami/mongodb-exporter:0.20.7
+    ports:
+      - '9216:9216'
+    networks:
+      - back_net
+    environment:
+      MONGODB_URI: 'mongodb://post_db:27017'
+    depends_on:
+      - post_db
+
+  cloudprober:
+    image: cloudprober/cloudprober:latest
+    ports:
+      - '9313:9313'
+    networks:
+      - back_net
+      - front_net
+      - host
+    volumes:
+      - /tmp/cloudprober.cfg:/etc/cloudprober.cfg
+    depends_on:
+      - post_db
+      - comment
+      - post
+      - ui
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.19.0
+    user: root
+    networks:
+      - back_net
+      - front_net
+    depends_on:
+      - post_db
+      - comment
+      - post
+      - ui
+
+volumes:
+  post_db:
+  prometheus_data:
+
+networks:
+  front_net:
+    driver: ${NET_DRIVER}
+    ipam:
+      driver: default
+      config:
+        - subnet: ${FRONT_NET_SUBNET}
+  back_net:
+    driver: ${NET_DRIVER}
+    ipam:
+      driver: default
+      config:
+        - subnet: ${BACK_NET_SUBNET}
+  host:
