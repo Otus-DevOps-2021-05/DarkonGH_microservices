@@ -9,11 +9,7 @@ DarkonGH microservices repository
 
 ### Установка Docker
 
-Выполним установку Docker:
-
-```bash
-sudo snap install docker
-```
+Выполним установку Docker согласно официальной инструкции `https://docs.docker.com/engine/install/ubuntu/`
 
 ### Запуск первого докер контейнера Hello-World
 
@@ -704,3 +700,163 @@ docker-compose -f docker-compose.yml up -d
 ```
 
 Если в каталоге проекта присутствует файл docker-compose.**override**.yml, то при выполнении команды `docker-compose up -d` он объединяется с конфигурацией описанной в docker-compose.yml. Детальное описание в документации `https://docs.docker.com/compose/extends/`
+
+## Домашнее задание №20 Устройство Gitlab CI. Построение процесса непрерывной интеграции
+
+*16 ДЗ: Gitlab CI. Построение процесса непрерывной интеграции*
+
+###  Установка VM при помощи yandex cli и установка Docker-Machine
+
+Подготовим VM в облаке Yandex - используем *yc*.
+
+```shell
+yc compute instance create \
+  --name gitlab-ci-vm \
+  --zone ru-central1-a \
+  --network-interface subnet-name=default-ru-central1-a,nat-ip-version=ipv4 \
+  --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-1804-lts,size=50 \
+  --ssh-key ~/.ssh/id_rsa.pub \
+  --cores 2 \
+  --core-fraction 100 \
+  --memory 8G
+```
+
+Установим на нее Docker-machine.
+
+```shell
+docker-machine -D create \
+--driver generic \
+--generic-ip-address=62.84.117.213 \
+--generic-ssh-user yc-user \
+--generic-ssh-key ~/.ssh/id_rsa \
+docker-gitlab-ci-vm
+```
+
+Подключимся к удаленному Docker-machine:
+
+```shell
+eval $(docker-machine env docker-gitlab-ci-vm)
+```
+
+### Автоматизация развёртывания GitLab и Gitlab-runner
+
+Для автоматизации развертывания GitLab подготовим конфигурационные файлы Packer и Terraform, а также напишем плейбуки Ansible.
+Как и ранее будем генерить динамическое инвентори на основе вывода команды terraform state pull.
+
+1. Подготовим образ с предустановленныи Docker и python3, провижионинг осуществим при помощи плейбука playbooks/packer_docker-host.yml
+Запуску команды выполняем из каталога ~/DarkonGH_microservices/docker-monolith/infra
+
+```
+packer build -var-file=packer/variables.json packer/docker.json
+```
+2. Полученный Id образа внесем в файл переменных terraform.tfvars и выполним  terraform apply из каталога ~/DarkonGH_microservices/docker-monolith/infra/terraform.  Output переменная после создания VM docker-host-0 будет использоваться в динамическом инвентори.
+3. Для работы динамического инвентори, в конфигурационный файл *env_tf_state.env* внесем абсолютный путь до каталога с конфигурацией terraform:
+```
+/home/darkon/DarkonGH_microservices/docker-monolith/infra/terraform
+```
+4. Запустим плейбук разворачивания GitLab-ci и gitlab-runner в контейнерах из каталога /home/darkon/DarkonGH_microservices/docker-monolith/infra/ansible. Команда
+```
+ansible-playbook playbooks/docker_gitlab.yml
+```
+
+5. Подключимся по ssh к VM docker-host-0
+```
+ssh ubuntu@62.84.116.138
+```
+для того чтобы узнать root пароль GitLab-ci в каталоге /srv/gitlab/config просмотрим файл initial_root_password
+
+```
+ubuntu@fhmejmsfo9uvikc0n52d:/srv/gitlab/config$ sudo cat initial_root_password
+# WARNING: This value is valid only in the following conditions
+#          1. If provided manually (either via `GITLAB_ROOT_PASSWORD` environment variable or via `gitlab_rails['initial_root_password']` setting in `gitlab.rb`, it was provided before database was seeded for the first time (usually, the first reconfigure run).
+#          2. Password hasn't been changed manually, either via UI or via command line.
+#
+#          If the password shown here doesn't work, you must reset the admin password following https://docs.gitlab.com/ee/security/reset_user_password.html#reset-your-root-password.
+
+Password: WDYiLCbCtxdHTgu2vzY0Z6HOcKxgs+KdnAF6gmfppSg=
+
+# NOTE: This file will be automatically deleted in the first reconfigure run after 24 hours.
+```
+
+теперь можно открыть UI Gitlab-ci `http://62.84.116.138/` и авторизоваться с приведенным в конфиге паролем для пользователя root.
+После авторизации рекомендуется изменить пароль и отключить авторегистрацию пользователей.
+
+6. Регистрация gitlab-runner
+```
+docker exec -it gitlab-runner gitlab-runner register --url http://10.128.0.12/ --registration-token v1ZfpQ634YgCGLqiE_6L --non-interactive --locked=false --name DockerRunner --executor docker --docker-image alpine:latest --docker-volumes "/var/run/docker.sock:/var/run/docker.sock" --tag-list "linux,xenial,ubuntu,docker" --run-untagged
+```
+Обязательным параметром является проброс сокета к Докеру на Vm для корректного функционирования Docker in Docker. Иначе он не сможет собирать образы в докере и будут ошибки в пайплайне.
+
+```
+$ docker build . -t reddit_app:$CI_COMMIT_REF_NAME
+error during connect: Post http://docker:2375/v1.40/build?buildargs=%7B%7D&cachefrom=%5B%5D&cgroupparent=&cpuperiod=0&cpuquota=0&cpusetcpus=&cpusetmems=&cpushares=0&dockerfile=Dockerfile&labels=%7B%7D&memory=0&memswap=0&networkmode=default&rm=1&session=oz9gqpn35d8uaugmyvcd5mb49&shmsize=0&t=reddit_app%3Agitlab-ci-1&target=&ulimits=null&version=1: dial tcp: lookup docker on 10.128.0.12:53: no such host
+ERROR: Job failed: exit code 1
+```
+
+### Задание со * -  Запуск reddit в контейнере
+
+Для деплоя приложения в пайплайне доработаем джобу branch review и напишем docker-compose.yml для управления нашим приложением.
+
+```
+branch review:
+  stage: review
+  image: tmaier/docker-compose:latest
+  script:
+    - echo "Deploy to $CI_ENVIRONMENT_SLUG"
+    - cd reddit
+    - docker-compose down
+    - docker-compose up -d
+  environment:
+    name: branch/$CI_COMMIT_REF_NAME
+    url: http://62.84.116.138:9292
+  only:
+    - branches
+  except:
+    - master
+```
+
+
+Список контейнеров:
+```
+ubuntu@fhmejmsfo9uvikc0n52d:~$ docker ps -a
+CONTAINER ID   IMAGE                         COMMAND                  CREATED         STATUS                 PORTS                                                            NAMES
+19d65045b36f   reddit_app:gitlab-ci-1        "/reddit/start.sh"       3 minutes ago   Up 3 minutes           0.0.0.0:9292->9292/tcp, :::9292->9292/tcp                        reddit_reddit_app_1
+a49674bae9b0   gitlab/gitlab-runner:latest   "/usr/bin/dumb-init …"   3 hours ago     Up 3 hours                                                                              gitlab-runner
+4d771ece4417   gitlab/gitlab-ce:latest       "/assets/wrapper"        3 hours ago     Up 3 hours (healthy)   0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp, 0.0.0.0:2222->22/tcp   gitlab
+```
+
+ ```
+ubuntu@fhmejmsfo9uvikc0n52d:~$ docker logs 19d65045b36f
+about to fork child process, waiting until server is ready for connections.
+forked process: 9
+child process started successfully, parent exiting
+Puma starting in single mode...
+* Puma version: 5.5.0 (ruby 2.5.1-p57) ("Zawgyi")
+*  Min threads: 0
+*  Max threads: 5
+*  Environment: development
+*          PID: 32
+/reddit/helpers.rb:4: warning: redefining `object_id' may cause serious problems
+* Listening on http://0.0.0.0:9292
+Use Ctrl-C to stop
+0.0.0.0 - - [01/Oct/2021:23:18:57 +0000] "GET / HTTP/1.1" 200 1861 0.0285
+0.0.0.0 - - [01/Oct/2021:23:19:32 +0000] "GET / HTTP/1.1" 200 1861 0.0192
+ ```
+
+### Автоматизация развёртывания GitLab Runner
+
+Плейбук развертывания GitLab Runner
+
+```
+/DarkonGH_microservices/gitlab-ci/docker_gitlab.yml
+```
+
+
+### Настройка оповещений в Slack
+
+Для настройки необходимо сгенерировать url для webhook в Slack, описание настройки:
+https://docs.gitlab.com/ee/user/project/integrations/slack.html
+
+На страничке https://devops-team-otus.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks выбираем интересующий канал и генерим url
+
+Добавляем ссылку `https://hooks.slack.com/services/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` в Setting\Integration Settings\Slack notifications\Webhook
