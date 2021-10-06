@@ -1,0 +1,21 @@
+---
+- name: Check && install python  && Install Docker
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install python
+      apt:
+        name:
+          - python3
+        update_cache: yes
+
+    - name: Install docker
+      include_role:
+        name: geerlingguy.docker
+
+    - name: Add your user to the docker group
+      user:
+        name: ubuntu
+        group: docker

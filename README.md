@@ -793,7 +793,10 @@ error during connect: Post http://docker:2375/v1.40/build?buildargs=%7B%7D&cache
 ERROR: Job failed: exit code 1
 ```
 
+
 ### Задание со * -  Деплой и запуск reddit app в контейнере
+
+
 
 Для деплоя приложения в пайплайне доработаем джобу branch review и напишем docker-compose.yml для управления нашим приложением.
 
@@ -860,6 +863,7 @@ https://docs.gitlab.com/ee/user/project/integrations/slack.html
 На страничке https://devops-team-otus.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks выбираем интересующий канал и генерим url
 
 Добавляем ссылку `https://hooks.slack.com/services/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` в Setting\Integration Settings\Slack notifications\Webhook
+
 
 ## Домашнее задание №22 Введение в мониторинг. Модели и принципы работы систем мониторинга
 
@@ -1106,3 +1110,4 @@ resp_code{code="404",dst="post",instance="cloudprober:9313",job="cloudprober",pr
    Напишите Makefile , который в минимальном варианте умеет:
     - Билдить любой или все образы, которые сейчас используются
     - Умеет пушить их в докер хаб
+

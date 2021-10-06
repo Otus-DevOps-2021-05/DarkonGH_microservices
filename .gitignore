@@ -19,7 +19,6 @@ version.tf
 
 .terraform.lock.hcl
 
-
 #packer
 variables.json
 
