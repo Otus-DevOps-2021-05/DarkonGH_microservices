@@ -793,7 +793,10 @@ error during connect: Post http://docker:2375/v1.40/build?buildargs=%7B%7D&cache
 ERROR: Job failed: exit code 1
 ```
 
-### Задание со * -  Запуск reddit в контейнере
+
+### Задание со * -  Деплой и запуск reddit app в контейнере
+
+
 
 Для деплоя приложения в пайплайне доработаем джобу branch review и напишем docker-compose.yml для управления нашим приложением.
 
@@ -860,3 +863,251 @@ https://docs.gitlab.com/ee/user/project/integrations/slack.html
 На страничке https://devops-team-otus.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks выбираем интересующий канал и генерим url
 
 Добавляем ссылку `https://hooks.slack.com/services/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` в Setting\Integration Settings\Slack notifications\Webhook
+
+
+## Домашнее задание №22 Введение в мониторинг. Модели и принципы работы систем мониторинга
+
+*17 ДЗ: Создание и запуск системы мониторинга Prometheus.*
+
+
+Соберем Docker образ prometheus:
+```
+$ export USER_NAME=darkonone
+$ docker build -t $USER_NAME/prometheus .
+```
+
+В файле docker/.env установить теги сервисов post, comment, ui - latest.
+
+
+Соберем images микросервисов из директории каждого микросервиса:
+```
+/src/ui $ bash docker_build.sh
+/src/post-py $ bash docker_build.sh
+/src/comment $ bash docker_build.sh
+```
+
+Внесем в docker-compose.yml aliases для сетей микросервисов.
+
+для mongodb:
+```yaml
+    networks:
+      back_net:
+        aliases:
+          - post_db
+          - comment_db
+```
+
+для post:
+```yaml
+    networks:
+      back_net:
+        aliases:
+          - post
+      front_net:
+        aliases:
+          - post
+```
+
+для comment:
+```yaml
+    networks:
+      back_net:
+        aliases:
+          - comment
+      front_net:
+        aliases:
+          - comment
+```
+
+запустим микросервисы в каталоге
+`/home/darkon/DarkonGH_microservices/docker/` командой docker-compose  -f docker-compose.yml up -d
+
+```
+darkon@darkonVM:~/DarkonGH_microservices/docker (monitoring-1)$ docker-compose ps
+              Name                            Command               State                    Ports
+--------------------------------------------------------------------------------------------------------------------
+dockermicroservices_comment_1      puma                             Up
+dockermicroservices_post_1         python3 post_app.py              Up
+dockermicroservices_post_db_1      docker-entrypoint.sh mongod      Up      27017/tcp
+dockermicroservices_prometheus_1   /bin/prometheus --config.f ...   Up      0.0.0.0:9090->9090/tcp,:::9090->9090/tcp
+dockermicroservices_ui_1           puma                             Up      0.0.0.0:9292->9292/tcp,:::9292->9292/tcp
+```
+
+после запуска приложения оно работает и доступно по адресу `http://62.84.118.20:9292`
+
+### Мониторинг состояния микросервисов
+
+web ui Prometheus доступен на `http://62.84.118.20:9090`
+
+Работоспособность endpoint-ов отображается в меню **Status\targets**
+
+Состояние сервисов отображают метрики *ui_health, ui_health_post_availability, ui_health_comment_availability*.
+Если значение 1 то все ОК, если 0 то взаимодействие с зависимыми сервисами нарушено.
+
+#### Самостоятельно
+
+При остановке микросервиса post_db метрики всех микросервисов переходят в 0, т.к. post и comment зависят от post_db, а ui зависят от post и comment.
+
+### Сбор метрик хоста
+
+Добавим сервис Node-exporter в docker/docker-compose.yml файл, а также настройки сети для него,
+запуск *docker-compose -f docker-compose.yml up -d node-exporter*
+
+Добавим в конфиг /home/darkon/DarkonGH_microservices/monitoring/prometheus/prometheus.yml job опроса node-exporter и пересоберем новый Docker для Prometheus:
+
+```shell
+monitoring/prometheus $ docker build -t $USER_NAME/prometheus .
+```
+Перезапустим сервисы:
+
+```shell
+$ docker-compose  -f docker-compose.yml down
+$ docker-compose  -f docker-compose.yml up -d
+```
+
+В списке endpoint-ов Prometheus появился endpoint Node. А также возможность просматривать его метрики.
+
+### Загрузка собранных образов на DockerHub
+
+```shell
+$ docker login
+Login Succeeded
+
+$ docker push $USER_NAME/ui
+$ docker push $USER_NAME/comment
+$ docker push $USER_NAME/post
+$ docker push $USER_NAME/prometheus
+```
+Ссылка на созданные образы в Docker Hub
+`https://hub.docker.com/search?q=darkonone&type=image`
+
+Список образов:
+
+- darkonone/ui
+- darkonone/comment
+- darkonone/post
+- darkonone/prometheus
+
+
+### Задание со *
+
+1. Мониторинг mongodb. Для мониторинга выбран  **percona / mongodb_exporter** собранный в docker образе bitnami/mongodb-exporter:0.20.7.
+   Необходимые для его работы настройки внесены в /home/darkon/DarkonGH_microservices/monitoring/prometheus/prometheus.yml
+
+   ```yml
+  - job_name: 'mongo'
+    static_configs:
+      - targets:
+          - 'bitnami-mongodb-exporter:9216'
+   ```
+
+   А также настройки сервиса внесены в /home/darkon/DarkonGH_microservices/docker/docker-compose.yml
+   ```yml
+     bitnami-mongodb-exporter:
+    image: bitnami/mongodb-exporter:0.20.7
+    ports:
+      - '9216:9216'
+    networks:
+      - back_net
+    environment:
+      MONGODB_URI: 'mongodb://post_db:27017'
+    depends_on:
+      - post_db
+    ```
+
+    После запуска Prometheus появился endpoint mongo и соответсвующие метрики.
+
+2. Мониторинг сервисов comment, post, ui с помощью blackbox экспортера и Cloudprober от google
+Добавим сответствующие настройки сервисов в /home/darkon/DarkonGH_microservices/docker/docker-compose.yml и /home/darkon/DarkonGH_microservices/monitoring/prometheus/prometheus.yml.
+
+Пересоберем образ Prometheus и запустим наше приложение.
+В Endpoints отобразятся новые узлы
+
+```
+blackbox (4/4 up)
+Endpoint 	State 	Labels 	Last Scrape 	Error
+http://blackbox-exporter:9115/probe
+module="tcp_connect" module="icmp" target="comment:9292" 	up 	instance="comment:9292" 	2.53s ago
+http://blackbox-exporter:9115/probe
+module="tcp_connect" module="icmp" target="post:5000" 	up 	instance="post:5000" 	2.693s ago
+http://blackbox-exporter:9115/probe
+module="tcp_connect" module="icmp" target="post_db:27017" 	up 	instance="post_db:27017" 	1.084s ago
+http://blackbox-exporter:9115/probe
+module="tcp_connect" module="icmp" target="ui:9292" 	up 	instance="ui:9292" 	3.803s ago
+cloudprober (1/1 up)
+Endpoint 	State 	Labels 	Last Scrape 	Error
+http://cloudprober:9313/metrics
+	up 	instance="cloudprober:9313" 	1.625s ago
+```
+
+Если blackbox показывает состояние конечных портов наших микросервисов.
+То cloudprober собирает еще метрики sysvars, а в случае добавления cloudprober.cfg в /etc docker образа
+```json
+probe {
+  name: "ui_homepage"
+  type: HTTP
+  targets {
+    host_names: "ui"
+  }
+  interval_msec: 5000  # 5s
+  timeout_msec: 1000   # 1s
+  http_probe {
+    port: 9292
+  }
+}
+probe {
+  name: "post"
+  type: HTTP
+  targets {
+    host_names: "post"
+  }
+  interval_msec: 5000  # 5s
+  timeout_msec: 1000   # 1s
+  http_probe {
+    port: 5000
+  }
+}
+probe {
+  name: "post_db"
+  type: HTTP
+  targets {
+    host_names: "post_db"
+  }
+  interval_msec: 5000  # 5s
+  timeout_msec: 1000   # 1s
+  http_probe {
+    port: 27017
+  }
+}
+probe {
+  name: "comment"
+  type: HTTP
+  targets {
+    host_names: "comment"
+  }
+  interval_msec: 5000  # 5s
+  timeout_msec: 1000   # 1s
+  http_probe {
+    port: 9292
+  }
+}
+```
+он производит сбор метрик. Правда микросервисы comment и post на http запрос отвечают кодом 404.
+```
+Element 	Value
+resp_code{code="200",dst="post_db",instance="cloudprober:9313",job="cloudprober",probe="post_db",ptype="http"}	28
+resp_code{code="200",dst="ui",instance="cloudprober:9313",job="cloudprober",probe="ui_homepage",ptype="http"}	28
+resp_code{code="404",dst="comment",instance="cloudprober:9313",job="cloudprober",probe="comment",ptype="http"}	28
+resp_code{code="404",dst="post",instance="cloudprober:9313",job="cloudprober",probe="post",ptype="http"}	26
+```
+
+Примечание: Неудобство cloudprober в случае использования docker-machine, т.к. не получится пробросить cloudprober.cfg в докер образ,
+и соответственно, необходимо его предварительно копировать в нужную папку на docker-host.
+Сборка же Docker образа из Dockerfile не описана на https://github.com/google/cloudprober
+При сборке идут ошибки. Остановился пока на варианте сохранения конфига на docker-host вручную.
+
+3. Подготовка скрипта автоматизации Makefile
+   Напишите Makefile , который в минимальном варианте умеет:
+    - Билдить любой или все образы, которые сейчас используются
+    - Умеет пушить их в докер хаб
+
