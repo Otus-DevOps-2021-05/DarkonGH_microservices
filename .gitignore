@@ -1,7 +1,10 @@
-cr_docker-host.sh
-cr_docker-machine.sh
-cr_gitlab-ci-vm.sh
-cr_dm_gilab-ci.sh
+.vm_dm/
+# 1_cr_docker-host.sh
+# 1_cr_docker-machine.sh
+# 2_cr_gitlab-ci-vm.sh
+# 2_cr_dm_gilab-ci.sh
+# 3_cr_docker-host-logging.sh
+# 3_cr_docker_m_logging.sh
 
 .vscode/
 .env
