@@ -1111,3 +1111,133 @@ resp_code{code="404",dst="post",instance="cloudprober:9313",job="cloudprober",pr
     - Билдить любой или все образы, которые сейчас используются
     - Умеет пушить их в докер хаб
 
+## Домашнее задание №25 Применение системы логирования в инфраструктуре на основе Docker
+
+*18 ДЗ: Логирование приложений*
+
+### Обновление кода микросервисов
+
+```bash
+git clone -b logging git@github.com:express42/reddit.git
+```
+
+Сборка образов
+```shell
+$ export USER_NAME=darkonone
+$ cd ./src/ui && bash docker_build.sh && docker push $USER_NAME/ui:logging
+$ cd ../post-py && bash docker_build.sh && docker push $USER_NAME/post:logging
+$ cd ../comment && bash docker_build.sh && docker push $USER_NAME/comment:logging
+```
+
+### Логирование Docker-контейнеров
+
+Для логирование используем стек EFK.
+
+Web-интерфейс Kibana для просмотра собранных в ElasticSearch логов Post-сервиса (Kibana слушает на порту 5601).
+
+### Задание со * Разбор ещё одного формата логов
+
+Для отладки GROK шаблонов в Kibana есть Dev Tools -> Grok Debugger
+
+пример строки для разбора:
+```
+service=ui | event=request | path=/ | request_id=c5ed3bf4-e3f7-4fa0-9c7c-210ecd1b75e3 | remote_addr=171.25.166.221 | method= GET | response_status=200
+```
+
+Настроенный Grok pattern:
+```
+service=%{WORD:service} \| event=%{WORD:event} \| path=%{URIPATHPARAM:request} \| request_id=%{GREEDYDATA:request_id} \| remote_addr=%{IP:client} \| method=.%{WORD:method} \| response_status=%{NUMBER:response_status}
+```
+Примечание: т.к. перед GET стоит пробел то и в паттерне надо указать символ . или пробел.
+
+Структурированные данные:
+```json
+{
+  "request": "/",
+  "method": "GET",
+  "response_status": "200",
+  "service": "ui",
+  "client": "171.25.166.221",
+  "event": "request",
+  "request_id": "c5ed3bf4-e3f7-4fa0-9c7c-210ecd1b75e3"
+}
+```
+
+Добивим еще один фильтр в `logging/fluentd/fluent.conf`
+```
+<filter service.ui>
+  @type parser
+  format grok
+  grok_pattern service=%{WORD:service} \| event=%{WORD:event} \| path=%{URIPATHPARAM:request} \| request_id=%{GREEDYDATA:request_id} \| remote_addr=%{IP:client} \| method=.%{WORD:method} \| response_status=%{NUMBER:response_status}
+  key_name message
+  reserve_data true
+</filter>
+```
+
+пересоберем образ `fluentd`
+```
+darkon@darkonVM:~/DarkonGH_microservices/logging/fluentd (logging-1)$ docker build -t $USER_NAME/fluentd .
+Sending build context to Docker daemon  4.096kB
+Step 1/4 : FROM fluent/fluentd:v0.12
+ ---> 5ad80e121366
+Step 2/4 : RUN gem install fluent-plugin-elasticsearch --no-rdoc --no-ri --version 1.9.5
+ ---> Using cache
+ ---> c2632b33d3ac
+Step 3/4 : RUN gem install fluent-plugin-grok-parser --no-rdoc --no-ri --version 1.0.0
+ ---> Using cache
+ ---> b6d70f93b785
+Step 4/4 : ADD fluent.conf /fluentd/etc
+ ---> 963895a35510
+Successfully built 963895a35510
+Successfully tagged darkonone/fluentd:latest
+```
+и перезапустим образ
+```sh
+darkon@darkonVM:~/DarkonGH_microservices/docker (logging-1)$ docker-compose -f docker-compose-logging.yml up -d fluentd
+WARNING: Found orphan containers (dockermicroservices_post_1, dockermicroservices_post_db_1, dockermicroservices_ui_1, dockermicroservices_blackbox-exporter_1, dockermicroservices_comment_1, dockermicroservices_bitnami-mongodb-exporter_1, dockermicroservices_prometheus_1, dockermicroservices_cloudprober_1, dockermicroservices_node-exporter_1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up.
+Recreating dockermicroservices_fluentd_1 ... done
+```
+
+теперь сообщение в kibana имеет такой вид, все поля логов UI разобраны:
+```json
+{
+  "_index": "fluentd-20211019",
+  "_type": "access_log",
+  "_id": "nGbQl3wBwWje_KLmLJAy",
+  "_version": 1,
+  "_score": null,
+  "_source": {
+    "timestamp": "2021-10-19T09:09:33.206184",
+    "pid": "1",
+    "loglevel": "INFO",
+    "progname": "",
+    "message": "service=ui | event=request | path=/ | request_id=7e7caf1a-54f5-47d0-ac72-95ad44fa3414 | remote_addr=191.25.166.121 | method= GET | response_status=200",
+    "service": "ui",
+    "event": "request",
+    "request": "/",
+    "request_id": "7e7caf1a-54f5-47d0-ac72-95ad44fa3414",
+    "client": "191.25.166.121",
+    "method": "GET",
+    "response_status": "200",
+    "@timestamp": "2021-10-19T09:09:33+00:00",
+    "@log_name": "service.ui"
+  },
+  "fields": {
+    "@timestamp": [
+      "2021-10-19T09:09:33.000Z"
+    ]
+  },
+  "highlight": {
+    "@log_name": [
+      "@kibana-highlighted-field@service.ui@/kibana-highlighted-field@"
+    ]
+  },
+  "sort": [
+    1634634573000
+  ]
+}
+```
+
+### Распределенный трейсинг - Траблшутинг UI-экспириенса
+
+При работе запущенного приложения с ошибкой, наблюдается задержка в работе при проваливании в какой либо пост, голосовании за пост и написании комментария в нем. Zipkin показывает, что метод /get выполняется с задержкой 3сек и отображается название спана где эта задерка присутсвует: `db_find_single_post`. Анализ приложения post_app.py показал, что в методе `def find_post(id)` внесена задерка в 3 сек (time.sleep(3)) перед логированием и отображением постов.

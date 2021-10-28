@@ -15,11 +15,31 @@ services:
     image: ${USERNAME}/ui:${UI_TAG}
     ports:
       - ${UI_IP}:9292/tcp
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: service.ui
+    environment:
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED}
+      POST_SERVICE_HOST: post
+      POST_SERVICE_PORT: 5000
+      COMMENT_SERVICE_HOST: comment
+      COMMENT_SERVICE_PORT: 9292
     networks:
       - front_net
 
   post:
     image: ${USERNAME}/post:${POST_TAG}
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: service.post
+    environment:
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED}
+      POST_DATABASE_HOST: post_db
+      POST_DATABASE: post
     networks:
       back_net:
         aliases:
@@ -30,6 +50,9 @@ services:
 
   comment:
     image: ${USERNAME}/comment:${COMMENT_TAG}
+    environment:
+      ZIPKIN_ENABLED: ${ZIPKIN_ENABLED}
+      COMMENT_DATABASE_HOST: comment_db
     networks:
       back_net:
         aliases:
@@ -78,21 +101,21 @@ services:
     depends_on:
       - post_db
 
-  cloudprober:
-    image: cloudprober/cloudprober:latest
-    ports:
-      - '9313:9313'
-    networks:
-      - back_net
-      - front_net
-      - host
-    volumes:
-      - /tmp/cloudprober.cfg:/etc/cloudprober.cfg
-    depends_on:
-      - post_db
-      - comment
-      - post
-      - ui
+  # cloudprober:
+  #   image: cloudprober/cloudprober:latest
+  #   ports:
+  #     - '9313:9313'
+  #   networks:
+  #     - back_net
+  #     - front_net
+  #     - host
+  #   volumes:
+  #     - /tmp/cloudprober.cfg:/etc/cloudprober.cfg
+  #   depends_on:
+  #     - post_db
+  #     - comment
+  #     - post
+  #     - ui
 
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.19.0

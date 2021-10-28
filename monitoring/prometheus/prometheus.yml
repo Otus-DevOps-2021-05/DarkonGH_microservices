@@ -28,10 +28,10 @@ scrape_configs:
       - targets:
           - 'bitnami-mongodb-exporter:9216'
 
-  - job_name: 'cloudprober'
-    scrape_interval: 10s
-    static_configs:
-      - targets: ['cloudprober:9313']
+  # - job_name: 'cloudprober'
+  #   scrape_interval: 10s
+  #   static_configs:
+  #     - targets: ['cloudprober:9313']
 
   - job_name: 'blackbox'
     metrics_path: /probe
