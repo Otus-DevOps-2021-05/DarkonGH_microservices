@@ -19,6 +19,7 @@ version.tf
 *.tfstate.backup
 *.tfvars
 .terraform/
+tfplan
 
 .terraform.lock.hcl
 
@@ -29,3 +30,5 @@ variables.json
 work.log
 roles/
 reddit_app_container.yaml
+env_tf_state.env
+inventory.json

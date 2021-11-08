@@ -1,0 +1,44 @@
+---
+
+- name: Master node
+  hosts: k8s_host_0
+  become: yes
+  vars:
+    docker_edition: 'ce'
+    docker_package: docker-{{ docker_edition }}=5:19.03.15~3-0~ubuntu-bionic
+    docker_package_state: present
+
+    kubernetes_version: '1.19'
+    kubernetes_role: 'master'
+    kubernetes_pod_network:
+      cni: 'calico'
+      cidr: '10.244.0.0/16'
+    kubernetes_config_cluster_configuration:
+      networking:
+        podSubnet: "{{ kubernetes_pod_network.cidr }}"
+      kubernetesVersion: "{{ kubernetes_version_kubeadm }}"
+      apiServer:
+        certSANs:
+          - "{{ansible_default_ipv4.address}}"
+          - "{{ansible_host}}"
+      controlPlaneEndpoint: "{{ansible_host}}"
+  roles:
+    - geerlingguy.docker
+    - geerlingguy.kubernetes
+
+- name: Worker node
+  hosts: k8s_host_1
+  become: yes
+  vars:
+    docker_edition: 'ce'
+    docker_package: docker-{{ docker_edition }}=5:19.03.15~3-0~ubuntu-bionic
+    docker_package_state: present
+
+    kubernetes_version: '1.19'
+    kubernetes_role: 'node'
+    kubernetes_pod_network:
+      cni: 'calico'
+      cidr: '10.244.0.0/16'
+  roles:
+    - geerlingguy.docker
+    - geerlingguy.kubernetes

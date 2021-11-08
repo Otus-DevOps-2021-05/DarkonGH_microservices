@@ -1241,3 +1241,124 @@ Recreating dockermicroservices_fluentd_1 ... done
 ### Распределенный трейсинг - Траблшутинг UI-экспириенса
 
 При работе запущенного приложения с ошибкой, наблюдается задержка в работе при проваливании в какой либо пост, голосовании за пост и написании комментария в нем. Zipkin показывает, что метод /get выполняется с задержкой 3сек и отображается название спана где эта задерка присутсвует: `db_find_single_post`. Анализ приложения post_app.py показал, что в методе `def find_post(id)` внесена задерка в 3 сек (time.sleep(3)) перед логированием и отображением постов.
+
+
+## Домашнее задание №27 Введение в Kubernetes
+
+*19 ДЗ: Установка и настройка Kubernetes*
+
+###  Подготовка VM
+
+В соответствии с заданием необходимо 2 ВМ:
+-  RAM 4
+-  CPU 4
+-  SSD 40 GB
+
+### Установка k8s на VM
+
+Установим определенные версии k8s 1.19 и версию Docker 19.03.
+
+Установка Docker на ubuntu 18.04
+```sh
+sudo apt update && sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+sudo apt update && sudo apt install -y docker-ce=5:19.03.15~3-0~ubuntu-bionic docker-ce-cli=5:19.03.15~3-0~ubuntu-bionic
+
+```
+
+Установка k8s на ubuntu 18.04 и фиксация версии
+``` bash
+sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update && sudo apt install -y kubelet=1.19.16-00 kubeadm=1.19.16-00 kubectl=1.19.16-00
+sudo apt-mark hold kubelet kubeadm kubectl
+```
+
+### Инициализация кластера
+
+Для инициализации кластера выполним команду на первой VM:
+```sh
+sudo kubeadm init --apiserver-cert-extra-sans=62.84.116.101 --control-plane-endpoint=62.84.116.101 --pod-network-cidr=10.244.0.0/16
+```
+А для добавления в кластер второй VM ( worker ноды):
+```
+sudo kubeadm join 62.84.116.101:6443 --token zpux2y.zdjbz9ivdi2sgfz3 --discovery-token-ca-cert-hash sha256:19bdaa32e7c6e61416b5d973e532fc6c5d03eaf9431f5dc490e9779b8291dd30
+```
+
+Для корректном взаимодействием с  `master` нодой, должен быть конфиг в рабочем каталоге пользователя, если его нет то необходимо создать, следующими командами:
+```
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+ ### Установка сетевого плагина
+
+После усановки кластера необходимо выбрать сетевой плагин и установить его. Мы будем использовать [Calico](https://docs.projectcalico.org/getting-started/kubernetes/self-managed-onprem/onpremises).
+Перед установкой сетевого плагина при помощи его манифеста `calico.yaml`,
+необходимо изменить в нем следующее значение `CALICO_IPV4POOL_CIDR` на `10.244.0.0/16`
+
+### Настройка взаимодействия с кластером с машины разработчика
+
+Для взаимодействия с кластером, с рабочей машины разработчика, необходимо установить на нее `kubectl` [Инструкция по установке](https://v1-19.docs.kubernetes.io/ru/docs/tasks/tools/install-kubectl/)
+и повторить шаг с конфигурацией, причем `~/.kube/config` необходимо получить с мастер ноды, т.к. в нем содержится контекст подключения, адрес мастер ноды кластера и сертификат пользователя.
+
+Проверка конфигурации kubectl выполняется командой:
+```sh
+darkon@darkonVM:~ $ kubectl cluster-info
+Kubernetes master is running at https://62.84.116.101:6443
+KubeDNS is running at https://62.84.116.101:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+```
+
+### Проверка созданных манифестов приложения reddit
+
+Для применения манифестов воспользуемся командой:
+
+```
+kubectl apply -f kubernetes/reddit/post-deployment.yml
+```
+После этого создаться `pod` с приложением `post`. По аналогии напишем манифесты для `comment`, `mongodb` и `ui` сервисов reddit.
+И применим их к кластеру.
+
+Изменим в `kubernetes/reddit/post-deployment.yml` образ на свой:
+```yaml
+spec:
+      containers:
+      - image: darkonone/post:logging
+        name: post
+```
+и перепименим данный манифест, проверим работу pod'ов, как видно старый `pod post-deployment-799c77ffb-tz2rl`  удаляется, и новый `post-deployment-d67bb5c5c-zhv82` уже запущен:
+
+```sh
+darkon@darkonVM:~ $ kubectl get pods
+NAME                                  READY   STATUS              RESTARTS   AGE
+comment-deployment-794c585f69-4hxbd   1/1     Running             0          2m5s
+mongo-deployment-545fd54f7c-mf6w4     1/1     Running             0          29s
+post-deployment-799c77ffb-tz2rl       0/1     Terminating         0          28m
+post-deployment-d67bb5c5c-zhv82       1/1     Running             0          20s
+ui-deployment-6f645948c-g6zbs         0/1     ContainerCreating   0          5s
+
+darkon@darkonVM:~ $ kubectl get pods
+NAME                                  READY   STATUS    RESTARTS   AGE
+comment-deployment-794c585f69-4hxbd   1/1     Running   0          2m26s
+mongo-deployment-545fd54f7c-mf6w4     1/1     Running   0          50s
+post-deployment-d67bb5c5c-zhv82       1/1     Running   0          41s
+ui-deployment-6f645948c-g6zbs         1/1     Running   0          26s
+```
+
+### Задание со ** - установка кластера k8s с помощью terraform и ansible
+
+Манифесты terraform находятся в `kubernetes/terraform`. Создаем нужное колличество хостов при помощи переменной `count`.
+Плейбук ansible в  `kubernetes/ansible`
+
+Для удобства в работе подготовим Makefile:
+```
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes (kubernetes-1)$ make
+terraform_automation  Create   VMs      by          terraform
+destroy_VMs           Destroy  VMs      by          terraform
+ansible_service       ansible  service  preinstall
+```
