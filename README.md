@@ -1549,9 +1549,9 @@ kubectl apply -f ./kubernetes/reddit/ -n dev
 ```
 
 После деплоя приложения в k8s список подов отображается в  web ui YC:
-[k8s](images/k8s-yc.png)
+![image 1](images/k8s-yc.png)
 
-Адрес web ui http://51.250.2.94:32091/
+Адрес web ui http://51.250.1.79:32091
 
 
 ### Задание со *
@@ -1611,7 +1611,9 @@ kubectl proxy
 Подключение к Дашборду по ссылке с помощью токена:
 `http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.`
 
-Пример работы [Дашборда](images/dashboard.png)
+Пример работы Дашборда
+
+![image 2](images/dashboard.png)
 
 
 Удаление созданных ролей, при необходимости:
