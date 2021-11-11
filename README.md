@@ -1433,7 +1433,7 @@ kubectl port-forward <pod-name> 8080:9292
 kubectl logs <имя пода>
 ```
 
-### Просмотр сервисов Minicube
+### Просмотр сервисов Minikube
 
 ```
 darkon@darkonVM:~/DarkonGH_microservices/kubernetes/reddit (kubernetes-2)$ minikube service ui
@@ -1505,7 +1505,7 @@ replicaset.apps/post-6fdf668988      3         3         3       20h
 replicaset.apps/ui-6d94b8844d        3         3         3       5d8h
 ```
 
-### Open minikube dashboard
+### Открытие minikube dashboard
 
 ```
 darkon@darkonVM:~/DarkonGH_microservices (kubernetes-2)$ minikube dashboard --url
@@ -1515,7 +1515,7 @@ darkon@darkonVM:~/DarkonGH_microservices (kubernetes-2)$ minikube dashboard --ur
 http://127.0.0.1:33517/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/
 ```
 
-### Разворачиваем Kubernetes в Yandex Cloud
+### Развертывание Kubernetes в Yandex Cloud
 
 - Имя кластера может быть произвольным  - *k8s-test-cluster*
 - Если нет сервис аккаунта его можно создать
@@ -1523,7 +1523,7 @@ http://127.0.0.1:33517/api/v1/namespaces/kubernetes-dashboard/services/http:kube
 - Версия k8s 1.19
 - Зона доступности - на ваше усмотрение (сети - аналогично)
 
-#### Создаем группу узлов
+#### Создание группы узлов
 
 - Версия k8s 1.19
 - Количество узлов - 2
