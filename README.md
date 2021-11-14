@@ -1628,7 +1628,26 @@ kubectl proxy
 
 *21 ДЗ: Настройка балансировщиков нагрузки в Kubernetes и SSL­Terminating.*
 
+### Ingress
 
+Установка:
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingressnginx/controller-v0.34.1/deploy/static/provider/cloud/deploy.yaml
+```
+
+добавляем сервис для ui:
+```
+kubectl apply -f ui-ingress.yml -n dev
+```
+
+просмотр сервисов:
+
+```
+kubectl get ingress -n dev
+Warning: extensions/v1beta1 Ingress is deprecated in v1.14+, unavailable in v1.22+; use networking.k8s.io/v1 Ingress
+NAME   CLASS    HOSTS   ADDRESS       PORTS     AGE
+ui     <none>   *       51.250.9.31   80, 443   47h
+```
 
 ### Создание сертификата
 
