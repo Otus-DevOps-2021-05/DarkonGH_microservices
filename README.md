@@ -1622,3 +1622,89 @@ kubectl proxy
 
 >kubectl -n kubernetes-dashboard delete serviceaccount admin-user
 >kubectl -n kubernetes-dashboard delete clusterrolebinding admin-user
+
+
+## Домашнее задание №29 Ingress-контроллеры и сервисы в Kubernetes
+
+*21 ДЗ: Настройка балансировщиков нагрузки в Kubernetes и SSL­Terminating.*
+
+
+
+### Создание сертификата
+
+Проверка IngressIP
+
+```
+kubectl get ingress -n dev
+
+NAME   CLASS    HOSTS   ADDRESS       PORTS   AGE
+ui     <none>   *       51.250.9.31   80      25h
+```
+
+Генерация сертификата:
+```
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=51.250.9.31"
+Generating a RSA private key
+........................+++++
+...................................................................................................+++++
+writing new private key to 'tls.key'
+-----
+```
+
+Загрузка и проверка сертификата в кластере:
+```
+kubectl create secret tls ui-ingress --key tls.key --cert tls.crt -n dev
+secret/ui-ingress created
+
+kubectl describe secret ui-ingress -n dev
+Name:         ui-ingress
+Namespace:    dev
+Labels:       <none>
+Annotations:  <none>
+
+Type:  kubernetes.io/tls
+
+Data
+====
+tls.crt:  1119 bytes
+tls.key:  1704 bytes
+```
+
+Проверяем `url`:
+- `http://51.250.9.31`
+- `https://51.250.9.31`
+Оба работают.
+
+### Задание со * - создаваемый объект Secret в виде Kubernetes-манифеста
+
+пример файла `kubernetes/reddit/secret.yml`
+
+### Network Policy
+
+Применение политики:
+```
+kubectl apply -f mongo-network-policy.yml -n dev
+```
+
+### PersistentVolume
+
+создание диска:
+```
+yc compute disk create --name k8s --size 4 --description "disk for k8s"
+done (4s)
+id: fhm5plumsj4b1n98uva2
+folder_id: b1g2rfg46c9gmfqqhh6g
+created_at: "2021-11-14T21:25:45Z"
+name: k8s
+description: disk for k8s
+type_id: network-hdd
+zone_id: ru-central1-a
+size: "4294967296"
+block_size: "4096"
+status: READY
+disk_placement_policy: {}
+```
+
+Важно:
+- размеры Persistent Volume и Persistent Volume Claims должны или совпадать или PVC должен быть меньше PV
+- Имя в pvc ( volumeName: mongo-pv) должно совпадать с именем pv
