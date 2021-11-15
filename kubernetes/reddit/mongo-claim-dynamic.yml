@@ -4,9 +4,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: pvc-dynamic
 spec:
+  storageClassName: my-yc-network-ssd
   accessModes:
     - ReadWriteOnce
-  storageClassName: yc-network-ssd
   resources:
     requests:
       storage: 4Gi

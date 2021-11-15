@@ -2,7 +2,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: my-sc-ssd
+  name: my-yc-network-ssd
 provisioner: disk-csi-driver.mks.ycloud.io
 volumeBindingMode: WaitForFirstConsumer
 parameters:
