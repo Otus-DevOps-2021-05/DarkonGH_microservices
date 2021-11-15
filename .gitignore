@@ -33,3 +33,6 @@ roles/
 reddit_app_container.yaml
 env_tf_state.env
 inventory.json
+
+#k8s
+secret.yml
