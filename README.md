@@ -1696,7 +1696,7 @@ tls.key:  1704 bytes
 
 ### Задание со * - создаваемый объект Secret в виде Kubernetes-манифеста
 
-пример файла Secret: `kubernetes/reddit/secret.yml`
+пример файла Secret: `kubernetes/reddit/secret.yml.example`
 и ui-Ingress `kubernetes/reddit/ui-ingress.yml`
 
 ### Network Policy
