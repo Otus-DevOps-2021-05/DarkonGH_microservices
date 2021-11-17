@@ -1565,6 +1565,9 @@ kubectl apply -f ./kubernetes/reddit/ -n dev
 - `vpc.tf` - манифест создания подсети k8s Cluster
 - `iam_sa.tf` - манифест для создания сервисного аккаунта для k8s Cluster
 
+Добавление context для YC:
+>yc managed-kubernetes cluster get-credentials my-cluster --external
+
 #### Создание YAML-манифеста для описания созданных сущностей для включения dashboard
 
 Деплой дашборда
@@ -1632,7 +1635,7 @@ kubectl proxy
 
 Установка:
 ```
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingressnginx/controller-v0.34.1/deploy/static/provider/cloud/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.34.1/deploy/static/provider/cloud/deploy.yaml
 ```
 
 добавляем сервис для ui:
@@ -1641,7 +1644,6 @@ kubectl apply -f ui-ingress.yml -n dev
 ```
 
 просмотр сервисов:
-
 ```
 kubectl get ingress -n dev
 Warning: extensions/v1beta1 Ingress is deprecated in v1.14+, unavailable in v1.22+; use networking.k8s.io/v1 Ingress
@@ -1728,3 +1730,57 @@ disk_placement_policy: {}
 Важно:
 - размеры Persistent Volume и Persistent Volume Claims должны или совпадать или PVC должен быть меньше PV
 - Имя в pvc ( volumeName: mongo-pv) должно совпадать с именем pv
+
+
+## Домашнее задание №30 Интеграция Kubernetes в GitlabCI
+
+*22 ДЗ: Создание Helm Chart’ов для компонент приложения, управление зависимостями Helm.*
+
+### Установка Helm
+
+Используем версию Helm 2.17.0
+
+Деплой ClusterRoleBinding
+применим манифест:
+>kubectl create -f tiller-clusterrolebinding.yml
+
+Деплой tillet или upgrade:
+>helm init --service-account tiller --upgrade
+
+При необходимости удаление деплоя Tiller:
+>kubectl delete deploy tiller-deploy -n kube-system
+
+### Charts and Templates
+
+Деплой Chart'а:
+```
+NAME:   test-ui-1
+LAST DEPLOYED: Wed Nov 17 23:56:51 2021
+NAMESPACE: default
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/Deployment
+NAME  READY  UP-TO-DATE  AVAILABLE  AGE
+ui    0/3    3           0          0s
+
+==> v1/Pod(related)
+NAME                 READY  STATUS             RESTARTS  AGE
+ui-769b895f56-85rgs  0/1    ContainerCreating  0         0s
+ui-769b895f56-ph9pg  0/1    ContainerCreating  0         0s
+ui-769b895f56-vtdcg  0/1    ContainerCreating  0         0s
+
+==> v1/Service
+NAME  TYPE      CLUSTER-IP     EXTERNAL-IP  PORT(S)         AGE
+ui    NodePort  10.96.226.104  <none>       9292:32753/TCP  0s
+
+==> v1beta1/Ingress
+NAME  CLASS   HOSTS  ADDRESS  PORTS  AGE
+ui    <none>  *      80, 443  0s
+```
+
+```
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts (kubernetes-4)$ helm  ls
+NAME            REVISION        UPDATED                         STATUS          CHART           APP VERSION     NAMESPACE
+test-ui-1       1               Wed Nov 17 23:56:51 2021        DEPLOYED        ui-1.0.0        1               default
+```
