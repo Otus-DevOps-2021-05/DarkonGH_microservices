@@ -1362,3 +1362,263 @@ terraform_automation  Create   VMs      by          terraform
 destroy_VMs           Destroy  VMs      by          terraform
 ansible_service       ansible  service  preinstall
 ```
+
+## Домашнее задание №28 Основные модели безопастности и контроллеры в Kubernetes
+
+*20 ДЗ: Установка и настройка yandex cloud Kubernetes Engine, настройка локального профиля администратора для yandex cloud. Работа с с контроллерами: StatefulSet, Deployment, DaemonSet*
+
+### Запуск Minikube
+
+```
+darkon@darkonVM:~ $ minikube start
+😄  minikube v1.23.2 on Ubuntu 20.04
+✨  Automatically selected the docker driver. Other choices: virtualbox, none, ssh
+👍  Starting control plane node minikube in cluster minikube
+🚜  Pulling base image ...
+💾  Downloading Kubernetes v1.22.2 preload ...
+    > gcr.io/k8s-minikube/kicbase: 355.39 MiB / 355.40 MiB  100.00% 5.02 MiB p/
+    > preloaded-images-k8s-v13-v1...: 511.69 MiB / 511.69 MiB  100.00% 6.44 MiB
+🔥  Creating docker container (CPUs=2, Memory=4000MB) ...
+🐳  Preparing Kubernetes v1.22.2 on Docker 20.10.8 ...
+    ▪ Generating certificates and keys ...
+    ▪ Booting up control plane ...
+    ▪ Configuring RBAC rules ...
+🔎  Verifying Kubernetes components...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Enabled addons: storage-provisioner, default-storageclass
+
+❗  /usr/local/bin/kubectl is version 1.19.16, which may have incompatibilites with Kubernetes 1.22.2.
+    ▪ Want kubectl v1.22.2? Try 'minikube kubectl -- get pods -A'
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+```
+
+### Взаимодействие с k8s
+
+просмотр текущего context:
+```
+kubeclt config current-context
+```
+
+список всех контекстов:
+```
+kubectl config get-contexts
+```
+
+запуск компонента описанного манифестом в формте  yaml:
+```
+kubectl apply -f <манифест>
+```
+
+Просмотр запущенных компонентов и подов:
+```
+kubectl get deployment
+```
+
+Поиск пода по имени selector:
+```
+kubectl get pods --selector component=<имя>
+```
+
+Проброс порта:
+
+```
+kubectl port-forward <pod-name> 8080:9292
+```
+
+>local-port:pod-port
+
+
+Просмотрел логов пода:
+```
+kubectl logs <имя пода>
+```
+
+### Просмотр сервисов Minikube
+
+```
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/reddit (kubernetes-2)$ minikube service ui
+|-----------|------|-------------|---------------------------|
+| NAMESPACE | NAME | TARGET PORT |            URL            |
+|-----------|------|-------------|---------------------------|
+| default   | ui   |        9292 | http://192.168.49.2:32092 |
+|-----------|------|-------------|---------------------------|
+🎉  Opening service default/ui in default browser...
+
+```
+
+И просмотр всего списка сервисов:
+```
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/reddit (kubernetes-2)$ minikube service list
+|----------------------|---------------------------|--------------|---------------------------|
+|      NAMESPACE       |           NAME            | TARGET PORT  |            URL            |
+|----------------------|---------------------------|--------------|---------------------------|
+| default              | comment                   | No node port |
+| default              | comment-db                | No node port |
+| default              | kubernetes                | No node port |
+| default              | mongodb                   | No node port |
+| default              | post                      | No node port |
+| default              | post-db                   | No node port |
+| default              | ui                        |         9292 | http://192.168.49.2:32092 |
+| kube-system          | kube-dns                  | No node port |
+| kubernetes-dashboard | dashboard-metrics-scraper | No node port |
+| kubernetes-dashboard | kubernetes-dashboard      | No node port |
+|----------------------|---------------------------|--------------|---------------------------|
+```
+
+Просмотр всех объектов в неймспейсе:
+```sh
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/reddit (kubernetes-2)$ kubectl  get all -n default
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/comment-84fcb854fd-8ztnb   1/1     Running   0          20h
+pod/comment-84fcb854fd-c5gmg   1/1     Running   0          20h
+pod/comment-84fcb854fd-fk42n   1/1     Running   0          20h
+pod/mongo-7cc44965cd-pk9z7     1/1     Running   0          20h
+pod/post-6fdf668988-8mh5l      1/1     Running   0          20h
+pod/post-6fdf668988-bdwdb      1/1     Running   0          20h
+pod/post-6fdf668988-h4g5p      1/1     Running   0          20h
+pod/ui-6d94b8844d-42lld        1/1     Running   0          5d8h
+pod/ui-6d94b8844d-8hbnx        1/1     Running   0          5d8h
+pod/ui-6d94b8844d-dft9n        1/1     Running   0          5d8h
+
+NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+service/comment      ClusterIP   10.110.44.87     <none>        9292/TCP         5d7h
+service/comment-db   ClusterIP   10.104.253.168   <none>        27017/TCP        20h
+service/kubernetes   ClusterIP   10.96.0.1        <none>        443/TCP          5d9h
+service/mongodb      ClusterIP   10.111.73.81     <none>        27017/TCP        19h
+service/post         ClusterIP   10.99.140.164    <none>        5000/TCP         20h
+service/post-db      ClusterIP   10.106.141.185   <none>        27017/TCP        20h
+service/ui           NodePort    10.107.172.119   <none>        9292:32092/TCP   19h
+
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/comment   3/3     3            3           5d7h
+deployment.apps/mongo     1/1     1            1           5d7h
+deployment.apps/post      3/3     3            3           5d7h
+deployment.apps/ui        3/3     3            3           5d8h
+
+NAME                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/comment-5dd47fd8d8   0         0         0       5d7h
+replicaset.apps/comment-84fcb854fd   3         3         3       20h
+replicaset.apps/mongo-77d8cfd6d6     0         0         0       5d7h
+replicaset.apps/mongo-7cc44965cd     1         1         1       20h
+replicaset.apps/post-6f64674b8b      0         0         0       5d7h
+replicaset.apps/post-6fdf668988      3         3         3       20h
+replicaset.apps/ui-6d94b8844d        3         3         3       5d8h
+```
+
+### Открытие minikube dashboard
+
+```
+darkon@darkonVM:~/DarkonGH_microservices (kubernetes-2)$ minikube dashboard --url
+🤔  Verifying dashboard health ...
+🚀  Launching proxy ...
+🤔  Verifying proxy health ...
+http://127.0.0.1:33517/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/
+```
+
+### Развертывание Kubernetes в Yandex Cloud
+
+- Имя кластера может быть произвольным  - *k8s-test-cluster*
+- Если нет сервис аккаунта его можно создать
+- Релизный канал *** Rapid ***
+- Версия k8s 1.19
+- Зона доступности - на ваше усмотрение (сети - аналогично)
+
+#### Создание группы узлов
+
+- Версия k8s 1.19
+- Количество узлов - 2
+- vCPU - 4
+- RAM - 8
+- Disk - SSD -64ГБ(минимальное значение)
+- В поле Доступ добавьте свой логин и публичный ssh ключ
+
+
+Подключение к k8s
+```
+yc managed-kubernetes cluster get-credentials k8s-test-cluster --external
+```
+
+Запустим наше приложение в K8s. Создадим dev namespace:
+```
+kubectl apply -f ./kubernetes/reddit/dev-namespace.yml
+```
+
+Задеплоим все компоненты приложения в namespace dev:
+```
+kubectl apply -f ./kubernetes/reddit/ -n dev
+```
+
+После деплоя приложения в k8s список подов отображается в  web ui YC:
+![image 1](images/k8s-yc.png)
+
+Адрес web ui http://51.250.1.79:32091
+
+
+### Задание со *
+
+#### Развертывание Kubernetes-кластера в Yandex cloud с помощью Terraform модуля
+
+Манифест Terraform для развертывания `Managed Service for Kubernetes` находится в каталоге `kubernetes/terraform_k8s`, за основу взята [документация](https://cloud.yandex.ru/docs/managed-kubernetes/operations/kubernetes-cluster/kubernetes-cluster-create)
+
+- `cluster.tf` - манифест стоздания кластера
+- `node_group.tf` - манифест создания группы виртуальных машин
+- `vpc.tf` - манифест создания подсети k8s Cluster
+- `iam_sa.tf` - манифест для создания сервисного аккаунта для k8s Cluster
+
+#### Создание YAML-манифеста для описания созданных сущностей для включения dashboard
+
+Деплой дашборда
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.4.0/aio/deploy/recommended.yaml
+namespace/kubernetes-dashboard created
+serviceaccount/kubernetes-dashboard created
+service/kubernetes-dashboard created
+secret/kubernetes-dashboard-certs created
+secret/kubernetes-dashboard-csrf created
+secret/kubernetes-dashboard-key-holder created
+configmap/kubernetes-dashboard-settings created
+role.rbac.authorization.k8s.io/kubernetes-dashboard created
+clusterrole.rbac.authorization.k8s.io/kubernetes-dashboard created
+rolebinding.rbac.authorization.k8s.io/kubernetes-dashboard created
+clusterrolebinding.rbac.authorization.k8s.io/kubernetes-dashboard created
+deployment.apps/kubernetes-dashboard created
+service/dashboard-metrics-scraper created
+deployment.apps/dashboard-metrics-scraper created
+```
+
+Создание Service Account с именем admin-user в namespace `kubernetes-dashboard`, файл `kubernetes/dashboard/dashboard-adminuser.yaml`
+
+```
+kubectl apply -f dashboard-adminuser.yaml
+```
+
+Создание ClusterRoleBinding для ServiceAccount, файл  `kubernetes/dashboard/ClusterRoleBinding.yml`
+
+```
+kubectl apply -f ClusterRoleBinding.yml
+```
+
+Получение токена командой:
+```
+kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
+```
+
+Запуск  доступа к Дашборду:
+```
+kubectl proxy
+```
+
+Подключение к Дашборду по ссылке с помощью токена:
+`http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.`
+
+Пример работы Дашборда
+
+![image 2](images/dashboard.png)
+
+
+Удаление созданных ролей, при необходимости:
+
+>Удаление admin ServiceAccount и ClusterRoleBinding.
+
+>kubectl -n kubernetes-dashboard delete serviceaccount admin-user
+>kubectl -n kubernetes-dashboard delete clusterrolebinding admin-user
