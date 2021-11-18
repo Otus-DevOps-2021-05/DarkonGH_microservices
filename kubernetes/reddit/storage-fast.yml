@@ -1,0 +1,12 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: my-yc-network-ssd
+provisioner: disk-csi-driver.mks.ycloud.io
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: network-ssd
+  csi.storage.k8s.io/fstype: ext4
+allowVolumeExpansion: false
+reclaimPolicy: Retain

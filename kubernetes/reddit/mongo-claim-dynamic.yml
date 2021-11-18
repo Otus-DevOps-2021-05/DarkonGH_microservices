@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-dynamic
+spec:
+  storageClassName: my-yc-network-ssd
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
