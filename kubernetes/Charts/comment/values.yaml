@@ -1,10 +1,10 @@
 ---
 service:
-  internalPort: 5000
-  externalPort: 5000
+  internalPort: 9292
+  externalPort: 9292
 
 image:
-  repository: darkonone/post
+  repository: darkonone/comment
   tag: logging
 
 databaseHost:

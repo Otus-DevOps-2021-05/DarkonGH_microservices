@@ -31,7 +31,7 @@ variable region_id {
 }
 variable count_of_instances {
   description = "Count of instances"
-  default = 1
+  default = 2
 }
 variable core_fraction {
   description = "Core fraction for instance"

@@ -1,8 +1,8 @@
 ---
 name: comment
 version: 1.0.0
-description: OTUS reddit application COMMENT
+description: OTUS reddit application comment
 maintainers:
-  - name: Someone
-    email: my@mail.com
+  - name: Denis Petrov
+    email: den.petrov@gmail.com
 appVersion: 1.0

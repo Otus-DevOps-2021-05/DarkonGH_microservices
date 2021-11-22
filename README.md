@@ -1554,7 +1554,7 @@ kubectl apply -f ./kubernetes/reddit/ -n dev
 Адрес web ui http://51.250.1.79:32091
 
 
-### Задание со *
+### Задание со * - Развертывание Kubernetes-кластера в Yandex cloud с помощью Terraform модуля
 
 #### Развертывание Kubernetes-кластера в Yandex cloud с помощью Terraform модуля
 
@@ -1783,4 +1783,134 @@ ui    <none>  *      80, 443  0s
 darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts (kubernetes-4)$ helm  ls
 NAME            REVISION        UPDATED                         STATUS          CHART           APP VERSION     NAMESPACE
 test-ui-1       1               Wed Nov 17 23:56:51 2021        DEPLOYED        ui-1.0.0        1               default
+```
+
+Создадим параметризованные чарты нашего приложения:
+```
+.
+├── comment
+│   ├── Chart.yaml
+│   ├── templates
+│   │   ├── deployment.yaml
+│   │   ├── _helpers.tpl
+│   │   └── service.yaml
+│   └── values.yaml
+├── post
+│   ├── Chart.yaml
+│   ├── templates
+│   │   ├── deployment.yaml
+│   │   ├── _helpers.tpl
+│   │   └── service.yaml
+│   └── values.yaml
+├── reddit
+│   ├── charts
+│   │   ├── comment-1.0.0.tgz
+│   │   ├── mongodb-7.8.10.tgz
+│   │   ├── post-1.0.0.tgz
+│   │   └── ui-1.0.0.tgz
+│   ├── Chart.yaml
+│   ├── requirements.lock
+│   ├── requirements.yaml
+│   └── values.yaml
+└── ui
+    ├── Chart.yaml
+    ├── templates
+    │   ├── deployment.yaml
+    │   ├── _helpers.tpl
+    │   ├── ingress.yaml
+    │   └── service.yaml
+    └── values.yaml
+
+8 directories, 24 files
+```
+
+Обновление зависимостей чарта
+>helm dep update ./reddit
+
+
+Установка приложения:
+
+```
+kubectl create ns dev
+
+helm upgrade --install --namespace=dev --wait reddit-release ./reddit
+
+Release "reddit-release" does not exist. Installing it now.
+W1122 01:26:10.229890  585550 warnings.go:70] extensions/v1beta1 Ingress is deprecated in v1.14+, unavailable in v1.22+; use networking.k8s.io/v1 Ingress
+W1122 01:26:10.551324  585550 warnings.go:70] extensions/v1beta1 Ingress is deprecated in v1.14+, unavailable in v1.22+; use networking.k8s.io/v1 Ingress
+NAME: reddit-release
+LAST DEPLOYED: Mon Nov 22 01:26:09 2021
+NAMESPACE: dev
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+
+
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts (kubernetes-4)$ kubectl get ingress -n dev
+Warning: extensions/v1beta1 Ingress is deprecated in v1.14+, unavailable in v1.22+; use networking.k8s.io/v1 Ingress
+NAME                CLASS    HOSTS   ADDRESS        PORTS   AGE
+reddit-release-ui   <none>   *       51.250.7.201   80      7m31s
+
+```
+
+Установка приложения (helm 2):
+```
+helm install reddit --name reddit
+```
+
+Обновление релиза (helm 2):
+```
+helm upgrade reddit ./reddit
+Release "reddit-test" has been upgraded.
+LAST DEPLOYED: Thu Nov 18 01:50:26 2021
+NAMESPACE: default
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/Deployment
+NAME                 READY  UP-TO-DATE  AVAILABLE  AGE
+reddit-test-comment  1/1    1           1          12m
+reddit-test-mongodb  1/1    1           1          12m
+reddit-test-post     1/1    1           1          12m
+reddit-test-ui       0/3    0           0          12m
+
+==> v1/PersistentVolumeClaim
+NAME                 STATUS  VOLUME                                    CAPACITY  ACCESS MODES  STORAGECLASS    AGE
+reddit-test-mongodb  Bound   pvc-9b3bf6e3-ccbc-44d1-8b7e-7e0599ee9570  8Gi       RWO           yc-network-hdd  12m
+
+==> v1/Pod(related)
+NAME                                  READY  STATUS             RESTARTS  AGE
+reddit-test-comment-6cc569547b-4vlnn  1/1    Running            0         12m
+reddit-test-comment-df498569c-pms4q   0/1    ContainerCreating  0         0s
+reddit-test-mongodb-bb985f44d-5sp5j   1/1    Running            0         12m
+reddit-test-post-698567dbc9-k76kw     1/1    Running            0         12m
+reddit-test-post-6d4f7576b4-28w87     0/1    ContainerCreating  0         0s
+reddit-test-ui-86f456c7c9-pqpff       1/1    Terminating        0         12m
+reddit-test-ui-86f456c7c9-r7hgs       1/1    Terminating        0         12m
+reddit-test-ui-86f456c7c9-zlrmw       1/1    Terminating        0         12m
+
+==> v1/Secret
+NAME                 TYPE    DATA  AGE
+reddit-test-mongodb  Opaque  1     12m
+
+==> v1/Service
+NAME                 TYPE       CLUSTER-IP     EXTERNAL-IP  PORT(S)         AGE
+reddit-test-comment  ClusterIP  10.96.255.120  <none>       9292/TCP        12m
+reddit-test-mongodb  ClusterIP  10.96.168.138  <none>       27017/TCP       12m
+reddit-test-post     ClusterIP  10.96.213.4    <none>       5000/TCP        12m
+reddit-test-ui       NodePort   10.96.218.163  <none>       9292:30732/TCP  12m
+
+==> v1beta1/Ingress
+NAME            CLASS   HOSTS  ADDRESS       PORTS  AGE
+reddit-test-ui  <none>  *      51.250.8.244  80     12m
+```
+
+### GitLab + Kubernetes
+
+Установка GitLab
+
+```bash
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts (kubernetes-4)$ helm repo add gitlab https://charts.gitlab.io
+"gitlab" has been added to your repositories
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts (kubernetes-4)$ helm fetch gitlab/gitlab-omnibus --version 0.1.37 --untar
 ```

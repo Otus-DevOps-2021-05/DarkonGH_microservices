@@ -5,4 +5,12 @@ service:
 
 image:
   repository: darkonone/ui
-  tag: logging
+  tag: latest
+
+ingress:
+  class: nginx
+
+postHost:
+postPort:
+commentHost:
+commentPort:

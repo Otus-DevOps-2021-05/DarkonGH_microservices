@@ -1,8 +1,8 @@
 ---
 name: ui
 version: 1.0.0
-description: OTUS reddit application UI
+description: OTUS reddit application ui
 maintainers:
-  - name: Someone
-    email: my@mail.com
+  - name: Denis Petrov
+    email: den.petrov@gmail.com
 appVersion: 1.0
