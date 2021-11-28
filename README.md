@@ -1548,11 +1548,10 @@ kubectl apply -f ./kubernetes/reddit/dev-namespace.yml
 kubectl apply -f ./kubernetes/reddit/ -n dev
 ```
 
-После деплоя приложения в k8s список подов отображается в  web ui YC:
+После деплоя приложения в k8s список подов отображается в web ui YC:
 ![image 1](images/k8s-yc.png)
 
 Адрес web ui http://51.250.1.79:32091
-
 
 ### Задание со * - Развертывание Kubernetes-кластера в Yandex cloud с помощью Terraform модуля
 
@@ -1827,7 +1826,6 @@ test-ui-1       1               Wed Nov 17 23:56:51 2021        DEPLOYED        
 Обновление зависимостей чарта
 >helm dep update ./reddit
 
-
 Установка приложения:
 
 ```
@@ -1845,12 +1843,10 @@ STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 
-
 darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts (kubernetes-4)$ kubectl get ingress -n dev
 Warning: extensions/v1beta1 Ingress is deprecated in v1.14+, unavailable in v1.22+; use networking.k8s.io/v1 Ingress
 NAME                CLASS    HOSTS   ADDRESS        PORTS   AGE
 reddit-release-ui   <none>   *       51.250.7.201   80      7m31s
-
 ```
 
 Установка приложения (helm 2):
@@ -1914,3 +1910,193 @@ darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts (kubernetes-4)$ helm 
 "gitlab" has been added to your repositories
 darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts (kubernetes-4)$ helm fetch gitlab/gitlab-omnibus --version 0.1.37 --untar
 ```
+
+установка Chart
+```
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts/gitlab-omnibus (kubernetes-4)$ helm install --name gitlab . -f values.yaml
+WARNING: This chart is deprecated
+NAME:   gitlab
+LAST DEPLOYED: Mon Nov 22 10:49:49 2021
+NAMESPACE: default
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/ConfigMap
+NAME                             DATA  AGE
+gitlab-gitlab-config             9     1s
+gitlab-gitlab-postgresql-initdb  1     1s
+gitlab-gitlab-runner             2     1s
+kube-lego                        2     1s
+nginx                            7     1s
+tcp-ports                        1     1s
+
+==> v1/DaemonSet
+NAME   DESIRED  CURRENT  READY  UP-TO-DATE  AVAILABLE  NODE SELECTOR  AGE
+nginx  2        2        0      2           0          <none>         1s
+
+==> v1/Deployment
+NAME                      READY  UP-TO-DATE  AVAILABLE  AGE
+default-http-backend      0/1    1           0          1s
+gitlab-gitlab             0/1    1           0          1s
+gitlab-gitlab-postgresql  0/1    1           0          1s
+gitlab-gitlab-redis       0/1    1           0          1s
+gitlab-gitlab-runner      0/1    1           0          1s
+kube-lego                 0/1    1           0          1s
+
+==> v1/Namespace
+NAME           STATUS  AGE
+kube-lego      Active  1s
+nginx-ingress  Active  1s
+
+==> v1/PersistentVolumeClaim
+NAME                              STATUS   VOLUME              CAPACITY  ACCESS MODES  STORAGECLASS  AGE
+gitlab-gitlab-config-storage      Pending  gitlab-gitlab-fast  1s
+gitlab-gitlab-postgresql-storage  Pending  gitlab-gitlab-fast  1s
+gitlab-gitlab-redis-storage       Pending  gitlab-gitlab-fast  1s
+gitlab-gitlab-registry-storage    Pending  gitlab-gitlab-fast  1s
+gitlab-gitlab-storage             Pending  gitlab-gitlab-fast  1s
+
+==> v1/Pod(related)
+NAME                                      READY  STATUS             RESTARTS  AGE
+default-http-backend-7744d88f46-2qlxg     0/1    ContainerCreating  0         1s
+gitlab-gitlab-549f7c684b-4xdzq            0/1    Pending            0         1s
+gitlab-gitlab-postgresql-b89cb559f-2df5j  0/1    Pending            0         1s
+gitlab-gitlab-redis-56bb865bb5-w5fbz      0/1    Pending            0         1s
+gitlab-gitlab-runner-765bc55b5c-h6llw     1/1    Terminating        8         20m
+gitlab-gitlab-runner-765bc55b5c-xjzrk     0/1    ContainerCreating  0         1s
+kube-lego-5db67dfc57-rrgk4                0/1    ContainerCreating  0         1s
+nginx-qkpfc                               0/1    ContainerCreating  0         1s
+nginx-tpf9r                               0/1    ContainerCreating  0         1s
+
+==> v1/Secret
+NAME                   TYPE    DATA  AGE
+gitlab-gitlab-runner   Opaque  2     1s
+gitlab-gitlab-secrets  Opaque  3     1s
+
+==> v1/Service
+NAME                      TYPE          CLUSTER-IP     EXTERNAL-IP  PORT(S)                                            AGE
+default-http-backend      ClusterIP     10.96.250.98   <none>       80/TCP                                             1s
+gitlab-gitlab             ClusterIP     10.96.161.160  <none>       22/TCP,8065/TCP,8105/TCP,8005/TCP,9090/TCP,80/TCP  1s
+gitlab-gitlab-postgresql  ClusterIP     10.96.207.157  <none>       5432/TCP                                           1s
+gitlab-gitlab-redis       ClusterIP     10.96.176.54   <none>       6379/TCP                                           1s
+nginx                     LoadBalancer  10.96.218.246  <pending>    80:32653/TCP,443:31767/TCP,22:30948/TCP            1s
+
+==> v1/StorageClass
+NAME                PROVISIONER           RECLAIMPOLICY  VOLUMEBINDINGMODE  ALLOWVOLUMEEXPANSION  AGE
+gitlab-gitlab-fast  kubernetes.io/gce-pd  Delete         Immediate          false                 1s
+
+==> v1beta1/Ingress
+NAME           CLASS   HOSTS                                                                  ADDRESS  PORTS  AGE
+gitlab-gitlab  <none>  gitlab-gitlab,registry.example.com,mattermost.example.com + 1 more...  80, 443  1s
+
+
+NOTES:
+
+  It may take several minutes for GitLab to reconfigure.
+    You can watch the status by running `kubectl get deployment -w gitlab-gitlab --namespace default
+  You did not specify a baseIP so one will be assigned for you.
+  It may take a few minutes for the LoadBalancer IP to be available.
+  Watch the status with: 'kubectl get svc -w --namespace nginx-ingress nginx', then:
+
+  export SERVICE_IP=$(kubectl get svc --namespace nginx-ingress nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+  Then make sure to configure DNS with something like:
+    *.example.com       300 IN A $SERVICE_IP
+```
+
+проверка ingress:
+```
+darkon@darkonVM:~/DarkonGH_microservices/kubernetes/Charts/gitlab-omnibus (kubernetes-4)$ kubectl get service -n nginx-ingress nginx
+NAME    TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                                   AGE
+nginx   LoadBalancer   10.96.190.59   51.250.11.215   80:31058/TCP,443:30763/TCP,22:30742/TCP   10m
+```
+
+#### Использование Gitlab.com
+
+Замечание:
+> В процессе развертывания устаревшего чарта с Gitlab, не удалось добится его работоспособности в Yandex Cloud
+> - изначально сам чарт был не работоспособен, приходилось менять apiVersion
+> - Persistent Volumes был запилен на Google Cloud и поды просто не стартавали, пришлось править под YC
+> - После старта всех подов осталась ошибка с Ingress Controllers
+> - Просмотр логов по некоторым контейнерам показывал на различные ошибки
+
+> В результате было принято решение использовать Gitlab.com для продолжения выполнения домашнего задания
+
+[Инструкция по подключению кластера Kubernetes к сборкам GitLab](`https://cloud.yandex.ru/docs/solutions/infrastructure-management/gitlab-containers#runners`)
+
+#### Установка GitLab Runner из Helm Chart
+
+Добавим для gitlab сервисный аккаунт и ClusterRoleBinding командой:
+```
+kubectl apply -f kubernetes/gitlab/gitlab-admin-service-account.yaml
+```
+
+- подготовим `kubernetes/gitlab/runner/values.yaml`
+
+создадим неймспейс:
+```
+kubectl create namespace gitlab-runner
+```
+
+установим gitlab executor из чарта:
+```
+helm install --namespace kube-system gitlab-runner -f ./values.yaml  gitlab/gitlab-runner
+
+NAME: gitlab-runner
+LAST DEPLOYED: Wed Nov 24 00:21:46 2021
+NAMESPACE: gitlab-runner
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Your GitLab Runner should now be registered against the GitLab instance reachable at: "https://gitlab.com/"
+```
+
+#### Запуск проекта
+
+Заполним репозиторий согласно рекоммендациям ДЗ.
+
+Добавим CI/CD пайплайны для `ui`, `comment` и `post`:
+![image 3](images/hwKub4_cicd_ui.png)
+![image 4](images/hwKub4_cicd_comment.png)
+![image 5](images/hwKub4_cicd_post.png)
+
+Изменим пайплайн для `ui` и `reddit-deploy` на gitlab style.
+
+Созданные пайпланый для `ui` , `post`, `comment` и `reddit` выложим в `kubernetes/Charts/gitlabci`
+
+#### Задание со * - добавление зависимых проектов в пайплайн
+
+[`документация Multi-project pipelines`](https://docs.gitlab.com/ee/ci/pipelines/multi_project_pipelines.html#define-multi-project-pipelines-in-your-gitlab-ciyml-file)
+
+
+для добавления много-проектного пайплайна, добавим в пайплайны `ui` , `post`, `comment`
+
+в список шагов, шаг `deploy`:
+```
+stages:
+  ...
+  - deploy
+```
+
+и описание шага с зависимым проектом `darkonone/reddit-deploy`, срабатывать данный шаг будет толко на ветке master:
+```
+bridge:
+  stage: deploy
+  trigger:
+    project: darkonone/reddit-deploy
+    branch: master
+    strategy: depend
+  only:
+    - master
+```
+
+Работу данного функционала видно на скринах:
+Merge ui в ветку master:
+![image 6](images/ui-multi-project.png)
+
+запускает пайплайн проекта reddit-deploy:
+![image 7](images/triggired-reddit-deploy.png)
+
+
+Для того чтобы проводилась автомтаически выкатка на production, необходимо в пайплайне `reddit-deploy` убрать `when manual` для шага production.

@@ -19,10 +19,11 @@ spec:
     - prometheus.{{ .Values.baseDomain }}
     secretName: gitlab-tls
   rules:
-  - host: gitlab.{{ .Values.baseDomain }}
+  - host: {{ template "fullname" . }}
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
           serviceName: {{ template "fullname" . }}
           servicePort: 8005
@@ -30,6 +31,7 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
           serviceName: {{ template "fullname" . }}
           servicePort: 8105
@@ -37,6 +39,7 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
           serviceName: {{ template "fullname" . }}
           servicePort: 8065
@@ -44,7 +47,7 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
           serviceName: {{ template "fullname" . }}
           servicePort: 9090
----

@@ -1,4 +1,4 @@
-{{- if (eq .Values.provider "gke") }}
+{{- if (eq .Values.provider "yc") }}
 kind: StorageClass
 apiVersion: {{ if .Capabilities.APIVersions.Has "storage.k8s.io/v1" }}storage.k8s.io/v1{{ else }}storage.k8s.io/v1beta1{{ end }}
 metadata:
@@ -12,9 +12,10 @@ metadata:
     storageclass.beta.kubernetes.io/is-default-class: "false"
   labels:
     kubernetes.io/cluster-service: "true"
-{{- if eq .Values.provider "gke" }}
-provisioner: kubernetes.io/gce-pd
+{{- if eq .Values.provider "yc" }}
+provisioner: disk-csi-driver.mks.ycloud.io
 parameters:
-  type: pd-ssd
+  type: network-ssd
+  csi.storage.k8s.io/fstype: ext4
 {{- end }}
 {{- end }}

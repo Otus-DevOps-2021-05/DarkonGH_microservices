@@ -36,3 +36,7 @@ inventory.json
 
 #k8s
 secret.yml
+
+Gitlab_ci/
+gitlab/
+runner/
