@@ -1548,10 +1548,12 @@ kubectl apply -f ./kubernetes/reddit/dev-namespace.yml
 kubectl apply -f ./kubernetes/reddit/ -n dev
 ```
 
+
 После деплоя приложения в k8s список подов отображается в web ui YC:
 ![image 1](images/k8s-yc.png)
 
 Адрес web ui http://51.250.1.79:32091
+
 
 ### Задание со * - Развертывание Kubernetes-кластера в Yandex cloud с помощью Terraform модуля
 
@@ -1563,6 +1565,7 @@ kubectl apply -f ./kubernetes/reddit/ -n dev
 - `node_group.tf` - манифест создания группы виртуальных машин
 - `vpc.tf` - манифест создания подсети k8s Cluster
 - `iam_sa.tf` - манифест для создания сервисного аккаунта для k8s Cluster
+
 
 Добавление context для YC:
 >yc managed-kubernetes cluster get-credentials my-cluster --external
@@ -2097,6 +2100,5 @@ Merge ui в ветку master:
 
 запускает пайплайн проекта reddit-deploy:
 ![image 7](images/triggired-reddit-deploy.png)
-
 
 Для того чтобы проводилась автомтаически выкатка на production, необходимо в пайплайне `reddit-deploy` убрать `when manual` для шага production.
