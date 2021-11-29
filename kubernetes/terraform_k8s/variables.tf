@@ -31,7 +31,7 @@ variable region_id {
 }
 variable count_of_instances {
   description = "Count of instances"
-  default = 1
+  default = 2
 }
 variable core_fraction {
   description = "Core fraction for instance"
@@ -41,12 +41,12 @@ variable core_fraction {
 variable cores {
   description = "Core number for instance"
   type = number
-  default = 4
+  default = 8
 }
 variable memory {
   description = "Memory GB for instance"
   type = number
-  default = 8
+  default = 16
 }
 variable disk_size {
   description = "OS disk size"

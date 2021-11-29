@@ -29,34 +29,21 @@ resource "yandex_kubernetes_node_group" "my_node_group" {
     scheduling_policy {
       preemptible = false
     }
+
+    metadata = {
+      ssh-keys = "ubuntu:${file(var.public_key_path)}"
+    }
   }
 
   scale_policy {
     fixed_scale {
-      size = 2
+      size = var.count_of_instances
     }
   }
 
   allocation_policy {
     location {
       zone = var.zone
-    }
-  }
-
-  maintenance_policy {
-    auto_upgrade = true
-    auto_repair  = true
-
-    maintenance_window {
-      day        = "monday"
-      start_time = "15:00"
-      duration   = "3h"
-    }
-
-    maintenance_window {
-      day        = "friday"
-      start_time = "10:00"
-      duration   = "4h30m"
     }
   }
 }

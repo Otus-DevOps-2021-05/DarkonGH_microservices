@@ -1,5 +1,4 @@
 ---
-
 - name: Master node
   hosts: k8s_host_0
   become: yes
